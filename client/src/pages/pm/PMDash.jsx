@@ -66,6 +66,23 @@ export default function PMDash() {
     toast('Task deleted', 'err')
   }
 
+  // Drag & drop status change — optimistic update with rollback on error
+  const handleStatusChange = useCallback(async (taskId, newStatus, originalTask) => {
+    // 1. Optimistically update UI immediately
+    setTasks(prev => prev.map(t => t._id === taskId ? { ...t, status: newStatus } : t))
+    try {
+      // 2. Persist to MongoDB
+      const { data } = await api.put(`/tasks/${taskId}`, { status: newStatus })
+      // 3. Sync with server response (keeps populated fields intact)
+      setTasks(prev => prev.map(t => t._id === data._id ? data : t))
+      toast(`Moved to ${newStatus}`)
+    } catch (e) {
+      // 4. Roll back on failure
+      setTasks(prev => prev.map(t => t._id === taskId ? originalTask : t))
+      toast(e.response?.data?.message || 'Failed to update status', 'err')
+    }
+  }, [])
+
   const stats = {
     total: tasks.length,
     pending: tasks.filter(t => t.status === 'Pending').length,
@@ -93,7 +110,7 @@ export default function PMDash() {
               <StatCard label="In Progress" value={stats.inProgress} type="progress" />
               <StatCard label="Completed"   value={stats.completed}  type="done"     />
             </div>
-            <KanbanBoard tasks={tasks} onView={setViewTask} onEdit={t => { setEditTask(t); setShowCreate(false) }} onDelete={handleDelete} canEdit />
+            <KanbanBoard tasks={tasks} onView={setViewTask} onEdit={t => { setEditTask(t); setShowCreate(false) }} onDelete={handleDelete} onStatusChange={handleStatusChange} canEdit />
           </div>
         )}
 

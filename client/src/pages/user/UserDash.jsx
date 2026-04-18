@@ -66,6 +66,19 @@ export default function UserDash() {
     } catch { toast('Update failed', 'err') }
   }
 
+  // Drag & drop — optimistic update with rollback
+  const handleStatusChange = useCallback(async (taskId, newStatus, originalTask) => {
+    setTasks(prev => prev.map(t => t._id === taskId ? { ...t, status: newStatus } : t))
+    try {
+      const { data } = await api.put(`/tasks/${taskId}`, { status: newStatus })
+      setTasks(prev => prev.map(t => t._id === data._id ? data : t))
+      toast(`Moved to ${newStatus}`)
+    } catch (e) {
+      setTasks(prev => prev.map(t => t._id === taskId ? originalTask : t))
+      toast(e.response?.data?.message || 'Failed to update status', 'err')
+    }
+  }, [])
+
   const stats = {
     total: tasks.length,
     pending: tasks.filter(t => t.status === 'Pending').length,
@@ -112,9 +125,6 @@ export default function UserDash() {
     )
   }
 
-  /* Kanban for user: no edit/delete, but has Update Status card action */
-  const userCanEdit = false
-
   return (
     <div className="layout">
       <Sidebar links={LINKS} active={active} onNav={setActive} />
@@ -132,40 +142,14 @@ export default function UserDash() {
               <StatCard label="Completed"       value={stats.completed}  type="done"     />
             </div>
 
-            {/* Custom Kanban with status-update action */}
-            <div className="kanban">
-              {['Pending','In Progress','Completed'].map((col, i) => {
-                const dots  = ['dot-pending','dot-progress','dot-done']
-                const colTasks = tasks.filter(t => t.status === col)
-                return (
-                  <div key={col} className="kanban-col">
-                    <div className="kanban-col-hdr">
-                      <div className="col-title"><span className={`col-dot ${dots[i]}`}/>{col}</div>
-                      <span className="col-count">{colTasks.length}</span>
-                    </div>
-                    {colTasks.length === 0 ? (
-                      <div style={{ textAlign:'center', padding:'28px 0', color:'var(--text-3)', fontSize:12 }}>No tasks</div>
-                    ) : colTasks.map(t => {
-                      const overdue = isOverdue(t.dueDate, t.status)
-                      return (
-                        <div key={t._id} className="task-card" onClick={() => setViewTask(t)}>
-                          <div className="tc-title">{t.title}</div>
-                          {t.description && <div className="tc-desc">{t.description}</div>}
-                          <div className="tc-meta">
-                            <span className={`tag ${priorityClass(t.priority)}`}>{t.priority}</span>
-                            {t.dueDate && <span className={`due-label ${overdue?'due-overdue':''}`}>{overdue?'⚠ ':''}{formatDate(t.dueDate)}</span>}
-                          </div>
-                          <div className="tc-actions" onClick={e => e.stopPropagation()}>
-                            <button className="btn btn-ghost btn-xs" onClick={() => setStatusTask(t)}>Update Status</button>
-                            <button className="btn btn-teal btn-xs" onClick={() => setViewTask(t)}>💬</button>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </div>
+            <KanbanBoard
+              tasks={tasks}
+              onView={setViewTask}
+              onEdit={() => {}}
+              onDelete={() => {}}
+              onStatusChange={handleStatusChange}
+              canEdit={false}
+            />
           </div>
         )}
 
