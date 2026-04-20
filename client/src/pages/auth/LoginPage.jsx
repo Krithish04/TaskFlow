@@ -7,8 +7,8 @@ import api from "../../api/axios";
 const DEMOS = [
   {
     label: "Admin",
-    email: "krithishsuvarna@gmail.com",
-    pass: "Krithish",
+    email: "krithish@gmail.com",
+    pass: "krithish123",
     color: "#7c6dfa",
   },
   {

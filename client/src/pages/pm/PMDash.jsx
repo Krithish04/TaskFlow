@@ -5,6 +5,7 @@ import TaskModal     from '../../components/common/TaskModal'
 import TaskViewModal from '../../components/common/TaskViewModal'
 import StatCard      from '../../components/common/StatCard'
 import Avatar        from '../../components/common/Avatar'
+import PMProjects    from './PMProjects'
 import api           from '../../api/axios'
 import { useAuth }   from '../../context/AuthContext'
 import { useToast }  from '../../context/ToastContext'
@@ -15,6 +16,7 @@ const LINKS = [
   { id: 'create',   label: 'Create Task',  icon: <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg> },
   { id: 'mytasks',  label: 'My Tasks',     icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg> },
   { id: 'team',     label: 'Team',         icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg> },
+  { id: 'projects', label: 'Projects',     icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg> },
 ]
 
 export default function PMDash() {
@@ -66,18 +68,13 @@ export default function PMDash() {
     toast('Task deleted', 'err')
   }
 
-  // Drag & drop status change — optimistic update with rollback on error
   const handleStatusChange = useCallback(async (taskId, newStatus, originalTask) => {
-    // 1. Optimistically update UI immediately
     setTasks(prev => prev.map(t => t._id === taskId ? { ...t, status: newStatus } : t))
     try {
-      // 2. Persist to MongoDB
       const { data } = await api.put(`/tasks/${taskId}`, { status: newStatus })
-      // 3. Sync with server response (keeps populated fields intact)
       setTasks(prev => prev.map(t => t._id === data._id ? data : t))
       toast(`Moved to ${newStatus}`)
     } catch (e) {
-      // 4. Roll back on failure
       setTasks(prev => prev.map(t => t._id === taskId ? originalTask : t))
       toast(e.response?.data?.message || 'Failed to update status', 'err')
     }
@@ -194,6 +191,9 @@ export default function PMDash() {
             </div>
           </div>
         )}
+
+        {/* Projects */}
+        {active === 'projects' && <PMProjects />}
       </div>
 
       {/* Modals */}

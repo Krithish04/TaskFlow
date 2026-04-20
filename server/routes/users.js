@@ -4,11 +4,16 @@ const User = require('../models/User');
 const Task = require('../models/Task');
 const { protect, authorize } = require('../middleware/auth');
 
-// GET /api/users  — Admin only: all users
+// GET /api/users — Admin/PM: supports role filtering
 router.get('/', protect, authorize('Admin', 'PM'), async (req, res) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: 1 });
-    res.json(users);
+    const filter = {};
+    if (req.query.role) {
+      // Accept both 'user' and 'User' from the query param
+      filter.role = req.query.role.charAt(0).toUpperCase() + req.query.role.slice(1).toLowerCase();
+    }
+    const users = await User.find(filter).select('-password').sort({ createdAt: 1 });
+    res.json({ success: true, data: users });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -42,7 +47,7 @@ router.get('/stats', protect, authorize('Admin'), async (req, res) => {
   }
 });
 
-// POST /api/users  — Admin: add user
+// POST /api/users — Admin: add user
 router.post('/', protect, authorize('Admin'), async (req, res) => {
   try {
     const { name, email, password, role } = req.body;

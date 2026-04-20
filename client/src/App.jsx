@@ -6,6 +6,10 @@ import AdminDash    from './pages/admin/AdminDash'
 import PMDash       from './pages/pm/PMDash'
 import UserDash     from './pages/user/UserDash'
 
+// Step 3 - Imported the new Project components 
+import PMProjects from './pages/pm/PMProjects';
+import MyProjects from './pages/user/MyProjects';
+
 function RoleRouter() {
   const { user, loading } = useAuth()
 
@@ -45,15 +49,23 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          {/* PM Routes Integration [cite: 27, 39] */}
           <Route path="/pm/*" element={
             <ProtectedRoute roles={['PM']}>
-              <PMDash />
+              <Routes>
+                <Route index element={<PMDash />} />
+                <Route path="projects" element={<PMProjects />} />
+              </Routes>
             </ProtectedRoute>
           } />
 
+          {/* User Routes Integration [cite: 27, 39] */}
           <Route path="/user/*" element={
             <ProtectedRoute roles={['User']}>
-              <UserDash />
+              <Routes>
+                <Route index element={<UserDash />} />
+                <Route path="projects" element={<MyProjects />} />
+              </Routes>
             </ProtectedRoute>
           } />
 
