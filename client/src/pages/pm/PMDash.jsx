@@ -5,11 +5,13 @@ import TaskModal     from '../../components/common/TaskModal'
 import TaskViewModal from '../../components/common/TaskViewModal'
 import StatCard      from '../../components/common/StatCard'
 import Avatar        from '../../components/common/Avatar'
+import StatusDot     from '../../components/common/StatusDot' // Added
 import PMProjects    from './PMProjects'
 import api           from '../../api/axios'
 import { useAuth }   from '../../context/AuthContext'
 import { useToast }  from '../../context/ToastContext'
 import { statusClass, priorityClass, formatDate, isOverdue } from '../../utils'
+import { useStatus } from '../../hooks/useStatus'
 
 const LINKS = [
   { id: 'kanban',   label: 'Kanban Board', icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zm8 0a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zm8 0a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"/></svg> },
@@ -20,6 +22,7 @@ const LINKS = [
 ]
 
 export default function PMDash() {
+  useStatus() // Handles self heartbeat
   const { user }  = useAuth()
   const { toast } = useToast()
   const [active, setActive]     = useState('kanban')
@@ -35,9 +38,15 @@ export default function PMDash() {
       const [t, u] = await Promise.all([api.get('/tasks'), api.get('/users/assignable')])
       setTasks(t.data); setUsers(u.data)
     } catch { toast('Failed to load', 'err') }
-  }, [])
+  }, [toast])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { 
+    load() 
+    
+    // UPDATED: Poll status every 30 seconds to keep teammate dots fresh
+    const poll = setInterval(load, 30000)
+    return () => clearInterval(poll)
+  }, [load])
 
   const handleCreate = async (form) => {
     setSaving(true)
@@ -78,7 +87,7 @@ export default function PMDash() {
       setTasks(prev => prev.map(t => t._id === taskId ? originalTask : t))
       toast(e.response?.data?.message || 'Failed to update status', 'err')
     }
-  }, [])
+  }, [toast])
 
   const stats = {
     total: tasks.length,
@@ -158,7 +167,7 @@ export default function PMDash() {
           </div>
         )}
 
-        {/* Team */}
+        {/* Team UPDATED */}
         {active === 'team' && (
           <div className="page animate-fadeIn">
             <div className="page-hdr">
@@ -167,13 +176,20 @@ export default function PMDash() {
             <div className="team-grid">
               {users.map(u => {
                 const ut       = tasks.filter(t => t.assignedTo?._id === u._id)
-                const pending  = ut.filter(t => t.status === 'Pending').length
                 const active_t = ut.filter(t => t.status === 'In Progress').length
                 const done     = ut.filter(t => t.status === 'Completed').length
                 return (
                   <div key={u._id} className="team-card">
                     <div className="team-card-top">
-                      <Avatar user={u} size="lg" />
+                      {/* STEP 6: Wrap Avatar and add StatusDot */}
+                      <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <Avatar user={u} size="lg" />
+                        <StatusDot
+                          status={u.status || 'Offline'}
+                          size={12}
+                          style={{ position: 'absolute', bottom: 2, right: 2, border: '2px solid var(--bg-card)' }}
+                        />
+                      </div>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{u.name}</div>
                         <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>{u.email}</div>

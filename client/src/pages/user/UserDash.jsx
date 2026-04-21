@@ -9,6 +9,8 @@ import api           from '../../api/axios'
 import { useAuth }   from '../../context/AuthContext'
 import { useToast }  from '../../context/ToastContext'
 import { priorityClass, statusClass, formatDate, isOverdue } from '../../utils'
+import { useStatus } from '../../hooks/useStatus'
+import { use } from 'react'
 
 const LINKS = [
   { id: 'board',      label: 'My Board',     icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zm8 0a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zm8 0a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"/></svg> },
@@ -43,6 +45,7 @@ function StatusModal({ task, onClose, onSave }) {
 }
 
 export default function UserDash() {
+  useStatus()
   const { user }  = useAuth()
   const { toast } = useToast()
   const [active, setActive]         = useState('board')

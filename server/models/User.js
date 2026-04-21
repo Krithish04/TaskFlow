@@ -34,7 +34,22 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  // --- STATUS FEATURE FIELDS START ---
+  status: { 
+    type: String, 
+    enum: ['Online', 'Offline', 'Away', 'On Leave'], 
+    default: 'Offline' 
+  },
+  leaveUntil: { 
+    type: Date, 
+    default: null 
+  },
+  lastSeen: { 
+    type: Date, 
+    default: null 
   }
+  // --- STATUS FEATURE FIELDS END ---
 }, { timestamps: true });
 
 // Hash password before save
