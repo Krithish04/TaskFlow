@@ -53,8 +53,11 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  // 1. Update the status in DB
-  user.status = "Online";
+  // UPDATED: Only set to 'Online' if they aren't 'On Leave'
+  if (user.status !== "On Leave") {
+    user.status = "Online";
+  }
+  
   user.lastSeen = new Date();
   await user.save(); 
 
@@ -63,7 +66,8 @@ router.post("/login", async (req, res) => {
     name: user.name,
     role: user.role,
     color: user.color,
-    status: user.status, // Ensure this is explicitly passed
+    status: user.status, // This will now correctly return 'On Leave' if applicable
+    leaveUntil: user.leaveUntil, // Ensure this is also returned
     token: generateToken(user._id),
   });
 });

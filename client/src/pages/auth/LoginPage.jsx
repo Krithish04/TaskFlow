@@ -48,6 +48,7 @@ export default function LoginPage() {
           email: data.email,
           role: data.role,
           color: data.color,
+          status: data.status,
         },
         data.token,
       );
@@ -70,6 +71,8 @@ export default function LoginPage() {
           email: data.email,
           role: data.role,
           color: data.color,
+          status: data.status,
+          
         },
         data.token,
       );
@@ -96,6 +99,7 @@ export default function LoginPage() {
           email: data.email,
           role: data.role,
           color: data.color,
+          status: data.status,
         },
         data.token,
       );
