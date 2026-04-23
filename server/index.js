@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const cron = require('node-cron'); // Import node-cron
+const User = require('./models/User'); // Import User model
 
 dotenv.config();
 
@@ -14,16 +16,35 @@ app.use(cors({
 }));
 app.use(express.json());
 
-/* ── STATUS FEATURE INTEGRATION START ── */
-// 1. Import the status router and the cleanup function
+/* ── STATUS FEATURE INTEGRATION ── */
 const { router: statusRouter, markIdleUsers } = require('./routes/status');
-
-// 2. Register the route (This fixes the 404 error)
 app.use('/api/status', statusRouter);
 
-// 3. Run the background job every 2 minutes to mark inactive users as 'Away'
+// Existing 2-minute interval for 'Away' status
 setInterval(markIdleUsers, 2 * 60 * 1000);
-/* ── STATUS FEATURE INTEGRATION END ── */
+
+// NEW: Daily Cron Job to refresh "On Leave" status
+// This runs every day at midnight (00:00)
+cron.schedule('0 0 * * *', async () => {
+    try {
+        const today = new Date();
+        const result = await User.updateMany(
+            { 
+                status: 'On Leave', 
+                leaveUntil: { $lt: today } 
+            },
+            { 
+                $set: { status: 'Offline', leaveUntil: null } 
+            }
+        );
+        if (result.modifiedCount > 0) {
+            console.log(`✅ Auto-refreshed ${result.modifiedCount} users from Leave to Offline.`);
+        }
+    } catch (err) {
+        console.error('❌ Error in daily leave cleanup:', err);
+    }
+});
+/* ── END STATUS FEATURE INTEGRATION ── */
 
 // Routes
 app.use('/api/auth',     require('./routes/auth'));
@@ -31,6 +52,7 @@ app.use('/api/users',    require('./routes/users'));
 app.use('/api/tasks',    require('./routes/tasks'));
 app.use('/api/comments', require('./routes/comments'));
 app.use('/api/projects', require('./routes/projects'));
+
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'OK', time: new Date() }));

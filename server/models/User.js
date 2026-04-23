@@ -65,4 +65,24 @@ userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+/* ── NEW: STATIC METHOD FOR AUTO-REFRESH ── */
+userSchema.statics.refreshLeaveStatuses = async function() {
+  const today = new Date();
+  // Reset time to the very start of the day for accurate date comparison
+  today.setHours(0, 0, 0, 0);
+
+  return await this.updateMany(
+    { 
+      status: 'On Leave', 
+      leaveUntil: { $lt: today } // If the return date is earlier than today
+    },
+    { 
+      $set: { 
+        status: 'Offline', 
+        leaveUntil: null 
+      } 
+    }
+  );
+};
+
 module.exports = mongoose.model('User', userSchema);

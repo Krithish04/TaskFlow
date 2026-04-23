@@ -3,7 +3,7 @@ import axios from 'axios'
 const api = axios.create({
   // UPDATED: Points to the full backend URL to prevent 404s
   // In production, process.env.VITE_API_URL should be used
-  baseURL: 'https://taskflow-bv8m.onrender.com/api', 
+  baseURL: 'https://taskflow-bv8m.onrender.com/api'|| 'http://localhost:5000/api', 
   headers: { 'Content-Type': 'application/json' }
 })
 
