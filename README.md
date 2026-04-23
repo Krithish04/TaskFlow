@@ -35,26 +35,5 @@ curl -X POST http://localhost:5000/api/auth/seed
 npm run dev   # runs server (5000) + client (5173) concurrently
 ```
 
-## Project Structure
-```
-taskflow/
-├── server/
-│   ├── index.js
-│   ├── models/       User, Task, Comment
-│   ├── routes/       auth, users, tasks, comments
-│   └── middleware/   auth (JWT protect + authorize)
-└── client/
-    └── src/
-        ├── App.jsx
-        ├── context/  AuthContext, ToastContext
-        ├── api/      axios.js
-        ├── components/
-        │   ├── layout/  Sidebar
-        │   └── common/  Avatar, StatCard, TaskCard,
-        │                KanbanBoard, TaskModal, TaskViewModal
-        └── pages/
-            ├── auth/   LoginPage
-            ├── admin/  AdminDash (Overview, Members, Tasks, Reports)
-            ├── pm/     PMDash (Kanban, Create, MyTasks, Team)
-            └── user/   UserDash (Board, Pending, InProgress, Completed)
-```
+## Project Deployed
+https://taskflow-1-7sax.onrender.com
