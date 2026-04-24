@@ -1,24 +1,13 @@
 const mongoose = require('mongoose');
 
-const commentSchema = new mongoose.Schema({
-  task: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Task',
-    required: true
-  },
-  author: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  text: {
-    type: String,
-    required: [true, 'Comment text is required'],
-    trim: true,
-    maxlength: [500, 'Comment cannot exceed 500 characters']
-  }
-}, { timestamps: true });
+const CommentSchema = new mongoose.Schema({
+  text: { type: String, required: true },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  // Optional task link
+  task: { type: mongoose.Schema.Types.ObjectId, ref: 'Task' },
+  // ADD THIS: Optional project link
+  project: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' }, 
+  createdAt: { type: Date, default: Date.now }
+});
 
-commentSchema.index({ task: 1, createdAt: 1 });
-
-module.exports = mongoose.model('Comment', commentSchema);
+module.exports = mongoose.model('Comment', CommentSchema);

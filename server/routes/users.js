@@ -75,4 +75,27 @@ router.delete('/:id', protect, authorize('Admin'), async (req, res) => {
   }
 });
 
+router.put('/:id', protect, authorize('Admin'), async (req, res) => {
+  try {
+    const { name, email, role } = req.body;
+    
+    // Prevent admin from changing their own role to something else (safety check)
+    if (req.params.id === req.user._id.toString() && role !== 'Admin') {
+      return res.status(400).json({ message: "You cannot change your own Admin role" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { name, email, role },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    res.json({ success: true, data: user });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

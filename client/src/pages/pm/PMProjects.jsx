@@ -25,37 +25,30 @@ const MiniAvatar = ({ user, size = 28 }) => (
 
 // ── Modal ────────────────────────────────────────────────────────────────────
 function ProjectModal({ project, employees, onSave, onClose }) {
-  // 1. Initialize form from localStorage if it's a NEW project
+  // Initialize state from localStorage if creating a new project
   const [form, setForm] = useState(() => {
     if (!project) {
-      const saved = localStorage.getItem('tf_project_draft')
-      if (saved) return JSON.parse(saved)
+      const savedDraft = localStorage.getItem('tf_project_draft');
+      return savedDraft ? JSON.parse(savedDraft) : {
+        name: '', description: '', deadline: '', status: 'active', teamLeader: '', members: []
+      };
     }
     return {
-      name:        project?.name        || '',
+      name: project?.name || '',
       description: project?.description || '',
-      deadline:    project?.deadline    ? project.deadline.slice(0, 10) : '',
-      status:      project?.status      || 'active',
-      teamLeader:  project?.teamLeader?._id || '',
-      members:     project?.members?.map(m => m._id) || [],
-    }
-  })
+      deadline: project?.deadline ? project.deadline.slice(0, 10) : '',
+      status: project?.status || 'active',
+      teamLeader: project?.teamLeader?._id || '',
+      members: project?.members?.map(m => m._id) || [],
+    };
+  });
 
-  const [saving, setSaving] = useState(false)
-  const { toast } = useToast()
-
-  // 2. Auto-save to localStorage whenever the form changes
+  // Auto-save to localStorage on every change
   useEffect(() => {
     if (!project) {
-      localStorage.setItem('tf_project_draft', JSON.stringify(form))
+      localStorage.setItem('tf_project_draft', JSON.stringify(form));
     }
-  }, [form, project])
-
-  const toggle = id =>
-    setForm(f => ({
-      ...f,
-      members: f.members.includes(id) ? f.members.filter(x => x !== id) : [...f.members, id],
-    }))
+  }, [form, project]);
 
   const handleSubmit = async () => {
     if (!form.name.trim()) return toast('Project name is required', 'err')
@@ -67,8 +60,6 @@ function ProjectModal({ project, employees, onSave, onClose }) {
       } else {
         await createProject(form)
         toast('Project created!')
-        // 3. Clear draft on successful creation
-        localStorage.removeItem('tf_project_draft') 
       }
       onSave()
     } catch (e) {
@@ -139,6 +130,12 @@ function ProjectModal({ project, employees, onSave, onClose }) {
             </p>
           </div>
         </div>
+        {project && (
+          <div className="field" style={{ marginTop: 24, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+            <label>Project Discussion</label>
+            <ProjectComments projectId={project._id} />
+          </div>
+        )}
 
         <div className="modal-foot">
           <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
@@ -215,6 +212,41 @@ function ProjectCard({ project, onEdit, onDelete }) {
       )}
     </div>
   )
+}
+
+function ProjectComments({ projectId }) {
+  const [comments, setComments] = useState([]);
+  const [text, setText] = useState('');
+
+  const fetchComments = async () => {
+    const res = await api.get(`/comments/project/${projectId}`);
+    setComments(res.data);
+  };
+
+  useEffect(() => { if (projectId) fetchComments(); }, [projectId]);
+
+  const handlePost = async () => {
+    if (!text.trim()) return;
+    await api.post(`/comments/project/${projectId}`, { text });
+    setText('');
+    fetchComments();
+  };
+
+  return (
+    <div className="comments-box">
+      <div className="comment-list">
+        {comments.map(c => (
+          <div key={c._id} className="comment-item">
+            <strong>{c.author.name}:</strong> {c.text}
+          </div>
+        ))}
+      </div>
+      <div className="comment-input">
+        <input value={text} onChange={e => setText(e.target.value)} placeholder="Add a project comment..." />
+        <button onClick={handlePost}>Post</button>
+      </div>
+    </div>
+  );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
