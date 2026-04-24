@@ -25,16 +25,31 @@ const MiniAvatar = ({ user, size = 28 }) => (
 
 // ── Modal ────────────────────────────────────────────────────────────────────
 function ProjectModal({ project, employees, onSave, onClose }) {
-  const [form, setForm] = useState({
-    name:        project?.name        || '',
-    description: project?.description || '',
-    deadline:    project?.deadline    ? project.deadline.slice(0, 10) : '',
-    status:      project?.status      || 'active',
-    teamLeader:  project?.teamLeader?._id || '',
-    members:     project?.members?.map(m => m._id) || [],
+  // 1. Initialize form from localStorage if it's a NEW project
+  const [form, setForm] = useState(() => {
+    if (!project) {
+      const saved = localStorage.getItem('tf_project_draft')
+      if (saved) return JSON.parse(saved)
+    }
+    return {
+      name:        project?.name        || '',
+      description: project?.description || '',
+      deadline:    project?.deadline    ? project.deadline.slice(0, 10) : '',
+      status:      project?.status      || 'active',
+      teamLeader:  project?.teamLeader?._id || '',
+      members:     project?.members?.map(m => m._id) || [],
+    }
   })
+
   const [saving, setSaving] = useState(false)
   const { toast } = useToast()
+
+  // 2. Auto-save to localStorage whenever the form changes
+  useEffect(() => {
+    if (!project) {
+      localStorage.setItem('tf_project_draft', JSON.stringify(form))
+    }
+  }, [form, project])
 
   const toggle = id =>
     setForm(f => ({
@@ -52,6 +67,8 @@ function ProjectModal({ project, employees, onSave, onClose }) {
       } else {
         await createProject(form)
         toast('Project created!')
+        // 3. Clear draft on successful creation
+        localStorage.removeItem('tf_project_draft') 
       }
       onSave()
     } catch (e) {

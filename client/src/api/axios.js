@@ -22,9 +22,6 @@ api.interceptors.response.use(
       // Clear all status tracking on forced logout
       localStorage.removeItem('tf_user')
       localStorage.removeItem('tf_token')
-      
-      // Redirecting to login ensures the "Offline" state is cleared globally
-      window.location.href = '/login'
     }
     return Promise.reject(err)
   }
