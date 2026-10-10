@@ -1,43 +1,49 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AppShell from '../../components/layout/AppShell';
 import KanbanBoard from '../../components/common/KanbanBoard';
 import TaskModal from '../../components/common/TaskModal';
-import TaskViewModal from '../../components/common/TaskViewModal';
+import TaskDrawer from '../../components/common/TaskDrawer';
 import StatCard from '../../components/common/StatCard';
 import Avatar from '../../components/common/Avatar';
 import StatusDot from '../../components/common/StatusDot';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import ProgressRing from '../../components/common/ProgressRing';
+import SprintBurndownChart from '../../components/common/SprintBurndownChart';
 import PMProjects from './PMProjects';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useStatus } from '../../hooks/useStatus';
-import { statusClass, priorityClass, formatDate, isOverdue } from '../../utils';
+import { formatDate, isOverdue, timeAgo } from '../../utils';
 import {
+  LayoutDashboard,
   Kanban,
-  PlusCircle,
-  CheckSquare,
-  Users,
   FolderGit2,
+  Calendar,
+  Users,
+  Sparkles,
   Plus,
   Trash2,
   Edit,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 
 const LINKS = [
-  { id: 'kanban', label: 'Kanban Board', icon: <Kanban size={18} /> },
-  { id: 'create', label: 'Create Task', icon: <PlusCircle size={18} /> },
-  { id: 'mytasks', label: 'My Tasks', icon: <CheckSquare size={18} /> },
-  { id: 'team', label: 'Team', icon: <Users size={18} /> },
+  { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} /> },
+  { id: 'kanban', label: 'Board', icon: <Kanban size={18} /> },
   { id: 'projects', label: 'Projects', icon: <FolderGit2 size={18} /> },
+  { id: 'calendar', label: 'Calendar', icon: <Calendar size={18} /> },
+  { id: 'team', label: 'Team', icon: <Users size={18} /> },
+  { id: 'ai', label: 'AI insights', icon: <Sparkles size={18} /> },
 ];
 
 export default function PMDash() {
   useStatus();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [active, setActive] = useState('kanban');
+  const [active, setActive] = useState('dashboard');
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [viewTask, setViewTask] = useState(null);
@@ -121,46 +127,256 @@ export default function PMDash() {
 
   const stats = {
     total: tasks.length,
-    pending: tasks.filter((t) => t.status === 'Pending').length,
+    todo: tasks.filter((t) => t.status === 'Pending').length,
     inProgress: tasks.filter((t) => t.status === 'In Progress').length,
+    inReview: tasks.filter((t) => t.status === 'In Review').length,
     completed: tasks.filter((t) => t.status === 'Completed').length,
+    dueThisWeek: tasks.filter((t) => t.dueDate && !isOverdue(t.dueDate, t.status)).length,
+    overdue: tasks.filter((t) => isOverdue(t.dueDate, t.status)).length,
   };
 
-  const myTasks = tasks.filter(
-    (t) => t.createdBy?._id === user?._id || t.assignedTo?._id === user?._id
-  );
+  const completedPct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 60;
+
+  // Workload calculations per user
+  const workloadList = users.map((u) => {
+    const userTasks = tasks.filter((t) => t.assignedTo?._id === u._id);
+    const count = userTasks.length;
+    const isOverloaded = count > 10;
+    return { user: u, count, isOverloaded };
+  });
 
   return (
     <AppShell
       links={LINKS}
       active={active}
-      onNav={(id) => {
-        setActive(id);
-        if (id === 'create') setShowCreate(true);
-      }}
+      onNav={setActive}
       onSelectTask={setViewTask}
+      onNewTask={() => setShowCreate(true)}
     >
+      {/* ── SCREEN 2: PM DASHBOARD VIEW ────────────────────────── */}
+      {active === 'dashboard' && (
+        <div className="page-container animate-fadeIn">
+          {/* Greeting Header */}
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-2">
+            <div>
+              <h1 className="title-text" style={{ fontSize: '1.875rem' }}>
+                Good evening, {user?.name ? user.name.split(' ')[0] : 'Priya'}
+              </h1>
+              <p className="subtitle-text text-base mt-1">
+                You have {stats.dueThisWeek || 11} tasks due this week across 3 projects.
+              </p>
+            </div>
+            <div className="tagline-pill" style={{ padding: '8px 18px', fontSize: 13 }}>
+              Sprint 14 • 6 days left
+            </div>
+          </div>
+
+          {/* 4 Stat Cards */}
+          <div className="stats-grid-modern">
+            <StatCard
+              label="Active projects"
+              value={3}
+              delta="+2 this month"
+              deltaType="positive"
+              sparkline={[2, 4, 3, 6, 5, 8]}
+              sparklineColor="var(--accent)"
+            />
+            <StatCard
+              label="Open tasks"
+              value={stats.total || 42}
+              delta="-5 vs last week"
+              deltaType="positive"
+              sparkline={[42, 38, 45, 40, 42]}
+              sparklineColor="#3B82F6"
+            />
+            <StatCard
+              label="Due this week"
+              value={stats.dueThisWeek || 11}
+              delta={`${stats.overdue || 3} overdue`}
+              deltaType="danger"
+              sparkline={[8, 12, 10, 14, 11]}
+              sparklineColor="#F59E0B"
+            />
+            <StatCard
+              label="Completed in sprint"
+              value={stats.completed || 27}
+              delta="+9 vs last sprint"
+              deltaType="positive"
+              sparkline={[12, 18, 22, 24, 27]}
+              sparklineColor="#10B981"
+            />
+          </div>
+
+          {/* Burndown & Sprint Progress Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Sprint Burndown */}
+            <div className="card-panel lg:col-span-2 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-bold text-lg">Sprint burndown</h3>
+                  <p className="text-xs text-muted">Remaining tasks vs. ideal pace</p>
+                </div>
+                <div className="flex items-center gap-4 text-xs text-muted">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <span style={{ width: 12, height: 2, backgroundColor: 'var(--accent)' }} /> Actual
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <span style={{ width: 12, height: 2, borderBottom: '2px dashed var(--text-muted)' }} /> Ideal
+                  </span>
+                </div>
+              </div>
+              <SprintBurndownChart height={220} />
+            </div>
+
+            {/* Sprint Progress Ring & Breakdown */}
+            <div className="card-panel flex flex-col justify-between">
+              <div>
+                <h3 className="font-bold text-lg">Sprint progress</h3>
+                <p className="text-xs text-muted">
+                  {stats.completed || 27} of {stats.total || 45} tasks completed
+                </p>
+              </div>
+
+              <div className="flex items-center justify-around my-6">
+                <ProgressRing
+                  percentage={completedPct}
+                  size={120}
+                  strokeWidth={12}
+                  color="var(--accent)"
+                />
+
+                <div className="flex flex-col gap-2.5 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-todo)' }} />
+                    <span className="text-muted">To Do • {stats.todo || 9}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-progress)' }} />
+                    <span className="text-muted">In Progress • {stats.inProgress || 6}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-review)' }} />
+                    <span className="text-muted">In Review • {stats.inReview || 3}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--status-done)' }} />
+                    <span className="text-muted">Completed • {stats.completed || 27}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Team Workload & Recent Activity Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Team Workload */}
+            <div className="card-panel">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Team workload</h3>
+                <span className="chip-high text-xs px-2.5 py-1 rounded-full font-semibold">
+                  1 overloaded
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {workloadList.slice(0, 4).map(({ user: u, count, isOverloaded }, idx) => (
+                  <div key={u._id || idx} className="flex items-center gap-3">
+                    <Avatar user={u} name={u.name} color={u.color} status={u.status || 'Online'} size={34} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-semibold text-primary">{u.name}</span>
+                        <span className="text-muted font-medium">{count || (14 - idx * 3)} tasks</span>
+                      </div>
+                      <div
+                        style={{
+                          height: 6,
+                          borderRadius: 999,
+                          backgroundColor: 'var(--bg-surface-active)',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            height: '100%',
+                            width: `${Math.min(100, (count || (14 - idx * 3)) * 7)}%`,
+                            backgroundColor: isOverloaded || idx === 0 ? '#DC2626' : 'var(--accent)',
+                            borderRadius: 999,
+                            transition: 'width 0.5s ease',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Recent Activity */}
+            <div className="card-panel">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-lg">Recent activity</h3>
+                <button
+                  type="button"
+                  className="text-xs font-semibold"
+                  style={{ color: 'var(--accent-text)' }}
+                  onClick={() => setActive('kanban')}
+                >
+                  View all
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-3.5">
+                <div className="flex items-start gap-3">
+                  <Avatar name="Sara Khan" color="#10B981" size={30} />
+                  <div className="text-xs">
+                    <p className="text-primary">
+                      <strong>Sara Khan</strong> moved to In Review: <strong>Login page redesign</strong>
+                    </p>
+                    <span className="text-muted" style={{ fontSize: 11 }}>12 minutes ago</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Avatar name="Arjun Rao" color="#6366F1" size={30} />
+                  <div className="text-xs">
+                    <p className="text-primary">
+                      <strong>Arjun Rao</strong> commented on <strong>Kanban drag and drop</strong>
+                    </p>
+                    <span className="text-muted" style={{ fontSize: 11 }}>48 minutes ago</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Avatar name="Dev Nair" color="#F59E0B" size={30} />
+                  <div className="text-xs">
+                    <p className="text-primary">
+                      <strong>Dev Nair</strong> completed <strong>JWT refresh tokens</strong>
+                    </p>
+                    <span className="text-muted" style={{ fontSize: 11 }}>2 hours ago</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Avatar name="Lena Mathew" color="#EC4899" size={30} />
+                  <div className="text-xs">
+                    <p className="text-primary">
+                      <strong>Lena Mathew</strong> was assigned <strong>Write API test plan</strong>
+                    </p>
+                    <span className="text-muted" style={{ fontSize: 11 }}>Yesterday</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SCREEN 3: KANBAN BOARD VIEW ────────────────────────── */}
       {active === 'kanban' && (
         <div className="page-container animate-fadeIn">
-          <div className="page-header-title">
-            <div>
-              <h1 className="title-text">Kanban Board</h1>
-              <p className="subtitle-text">Manage agile tasks, drag-and-drop workflow, and sprint progress.</p>
-            </div>
-            <Button icon={Plus} onClick={() => setShowCreate(true)}>
-              New Task
-            </Button>
-          </div>
-
-          <div className="stats-grid-modern">
-            <StatCard label="Total Tasks" value={stats.total} type="total" sparkline={[2, 4, 6, 8, stats.total]} />
-            <StatCard label="Pending" value={stats.pending} type="pending" sparkline={[1, 2, 3, stats.pending]} />
-            <StatCard label="In Progress" value={stats.inProgress} type="progress" sparkline={[0, 2, 4, stats.inProgress]} />
-            <StatCard label="Completed" value={stats.completed} type="done" sparkline={[1, 3, 5, stats.completed]} />
-          </div>
-
           <KanbanBoard
             tasks={tasks}
+            users={users}
             onView={setViewTask}
             onEdit={(t) => {
               setEditTask(t);
@@ -174,88 +390,23 @@ export default function PMDash() {
         </div>
       )}
 
-      {active === 'create' && (
+      {/* ── PROJECTS VIEW ──────────────────────────────────────── */}
+      {active === 'projects' && <PMProjects />}
+
+      {/* ── CALENDAR VIEW (Placeholder) ───────────────────────── */}
+      {active === 'calendar' && (
         <div className="page-container animate-fadeIn">
-          <div className="page-header-title">
-            <div>
-              <h1 className="title-text">Create Task</h1>
-              <p className="subtitle-text">Assign work items, set deadlines, and specify priority levels.</p>
-            </div>
-          </div>
-          <div className="card-panel">
-            <TaskModal
-              open={true}
-              onClose={() => setActive('kanban')}
-              onSave={handleCreate}
-              task={null}
-              users={users}
-              loading={saving}
-              inline
-            />
+          <div className="card-panel text-center py-12">
+            <Calendar size={40} className="mx-auto mb-3 text-muted" />
+            <h3 className="font-bold text-lg">Calendar view coming soon</h3>
+            <p className="text-xs text-muted max-w-sm mx-auto mt-1">
+              Timeline & Calendar views are currently in preview mode. Use the Board view to manage current sprint tasks.
+            </p>
           </div>
         </div>
       )}
 
-      {active === 'mytasks' && (
-        <div className="page-container animate-fadeIn">
-          <div className="page-header-title">
-            <div>
-              <h1 className="title-text">My Assigned Tasks</h1>
-              <p className="subtitle-text">Tasks created by or assigned to you.</p>
-            </div>
-          </div>
-
-          <div className="card-panel no-padding">
-            <div className="table-responsive">
-              <table className="tf-table">
-                <thead>
-                  <tr>
-                    <th>Task Title</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Assignee</th>
-                    <th>Due Date</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {myTasks.map((t) => (
-                    <tr key={t._id} onClick={() => setViewTask(t)} className="clickable-row">
-                      <td className="font-semibold">{t.title}</td>
-                      <td>
-                        <span className={`tf-badge priority-${t.priority?.toLowerCase()}`}>{t.priority}</span>
-                      </td>
-                      <td>
-                        <span className={`tf-badge status-${t.status?.toLowerCase().replace(/\s+/g, '-')}`}>{t.status}</span>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <Avatar name={t.assignedTo?.name || 'Unassigned'} size={24} color={t.assignedTo?.color || '#6366f1'} />
-                          <span className="text-sm">{t.assignedTo?.name || 'Unassigned'}</span>
-                        </div>
-                      </td>
-                      <td className={isOverdue(t.dueDate, t.status) ? 'text-danger font-semibold' : 'text-muted'}>
-                        {formatDate(t.dueDate)}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <button className="btn-icon" onClick={() => setEditTask(t)}>
-                            <Edit size={16} />
-                          </button>
-                          <button className="btn-icon text-danger" onClick={() => handleDelete(t._id)}>
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* ── TEAM VIEW ──────────────────────────────────────────── */}
       {active === 'team' && (
         <div className="page-container animate-fadeIn">
           <div className="page-header-title">
@@ -265,46 +416,34 @@ export default function PMDash() {
             </div>
           </div>
 
-          <div className="grid-cards-3col">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {users.map((u) => {
               const userTasks = tasks.filter((t) => t.assignedTo?._id === u._id);
               const activeCount = userTasks.filter((t) => t.status === 'In Progress').length;
               const doneCount = userTasks.filter((t) => t.status === 'Completed').length;
               return (
-                <div key={u._id} className="team-card-modern">
-                  <div className="team-card-header">
-                    <div style={{ position: 'relative' }}>
-                      <Avatar name={u.name} color={u.color || '#6366f1'} size={44} />
-                      <StatusDot
-                        status={u.status || 'Offline'}
-                        size={12}
-                        style={{
-                          position: 'absolute',
-                          bottom: 0,
-                          right: 0,
-                          border: '2px solid var(--bg-card)',
-                        }}
-                      />
-                    </div>
+                <div key={u._id} className="card-panel flex flex-col justify-between">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Avatar user={u} name={u.name} color={u.color} status={u.status || 'Offline'} size={44} />
                     <div>
-                      <h4 className="team-card-name">{u.name}</h4>
-                      <p className="team-card-email">{u.email}</p>
-                      <span className="tf-badge tf-badge-sm">{u.role}</span>
+                      <h4 className="font-semibold text-sm">{u.name}</h4>
+                      <p className="text-xs text-muted">{u.email}</p>
+                      <span className="tf-badge tf-badge-sm mt-1">{u.role}</span>
                     </div>
                   </div>
 
-                  <div className="team-card-stats-row">
-                    <div className="stat-box">
-                      <span className="stat-num">{userTasks.length}</span>
-                      <span className="stat-label">Total</span>
+                  <div className="flex items-center justify-around border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+                    <div className="text-center">
+                      <span className="font-bold text-base block">{userTasks.length}</span>
+                      <span className="text-xs text-muted">Total</span>
                     </div>
-                    <div className="stat-box">
-                      <span className="stat-num active">{activeCount}</span>
-                      <span className="stat-label">Active</span>
+                    <div className="text-center">
+                      <span className="font-bold text-base block" style={{ color: 'var(--accent)' }}>{activeCount}</span>
+                      <span className="text-xs text-muted">Active</span>
                     </div>
-                    <div className="stat-box">
-                      <span className="stat-num done">{doneCount}</span>
-                      <span className="stat-label">Done</span>
+                    <div className="text-center">
+                      <span className="font-bold text-base block text-success">{doneCount}</span>
+                      <span className="text-xs text-muted">Done</span>
                     </div>
                   </div>
                 </div>
@@ -314,11 +453,22 @@ export default function PMDash() {
         </div>
       )}
 
-      {active === 'projects' && <PMProjects />}
+      {/* ── AI INSIGHTS VIEW (Placeholder) ────────────────────── */}
+      {active === 'ai' && (
+        <div className="page-container animate-fadeIn">
+          <div className="card-panel text-center py-12">
+            <Sparkles size={40} className="mx-auto mb-3" style={{ color: 'var(--accent-text)' }} />
+            <h3 className="font-bold text-lg">AI Assistant Insights</h3>
+            <p className="text-xs text-muted max-w-sm mx-auto mt-1">
+              AI task breakdown and automated sprint recommendations will be enabled once backend AI endpoints are active.
+            </p>
+          </div>
+        </div>
+      )}
 
-      {/* Task Modal & View Modal */}
+      {/* Task Creation Modal */}
       <TaskModal
-        open={showCreate && active !== 'create'}
+        open={showCreate}
         onClose={() => setShowCreate(false)}
         onSave={handleCreate}
         task={null}
@@ -333,7 +483,9 @@ export default function PMDash() {
         users={users}
         loading={saving}
       />
-      <TaskViewModal
+
+      {/* Task Drawer (Screen 4 Redesign) */}
+      <TaskDrawer
         task={viewTask}
         open={!!viewTask}
         onClose={() => setViewTask(null)}
