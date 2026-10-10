@@ -3,7 +3,15 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import CommandPalette from '../common/CommandPalette';
 
-export default function AppShell({ links, active, onNav, children, onSelectTask, onSelectProject }) {
+export default function AppShell({
+  links,
+  active,
+  onNav,
+  children,
+  onSelectTask,
+  onSelectProject,
+  onNewTask,
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
@@ -21,8 +29,7 @@ export default function AppShell({ links, active, onNav, children, onSelectTask,
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed((prev) => !prev)}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          onSelectTask={onSelectTask}
-          onSelectProject={onSelectProject}
+          onNewTask={onNewTask}
         />
 
         <main className="app-content">{children}</main>
