@@ -1,55 +1,111 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useToast } from '../../context/ToastContext';
 import api from '../../api/axios';
-import { ShieldCheck, Briefcase, UserCheck, Layers, CheckCircle2, ArrowRight } from 'lucide-react';
+import Input from '../../components/common/Input';
+import Button from '../../components/common/Button';
+import Checkbox from '../../components/common/Checkbox';
+import ProgressRing from '../../components/common/ProgressRing';
+import AvatarStack from '../../components/common/AvatarStack';
+import Badge from '../../components/common/Badge';
+import {
+  Mail,
+  Lock,
+  ArrowRight,
+  Shield,
+  Briefcase,
+  User,
+  ChevronRight,
+  Sparkles,
+  Sun,
+  ShieldCheck,
+} from 'lucide-react';
 
 const DEMOS = [
   {
-    label: 'Admin Workspace',
-    role: 'Admin',
+    roleKey: 'Admin',
+    name: 'Admin',
     email: 'krithish@gmail.com',
     pass: 'krithish123',
-    color: '#6366f1',
     icon: ShieldCheck,
-    desc: 'Full system metrics, member management & security control',
+    desc: 'Manage users, roles and all projects',
+    iconColor: '#6366F1',
+    bgColor: '#EEF0FF',
   },
   {
-    label: 'Project Manager',
-    role: 'PM',
+    roleKey: 'PM',
+    name: 'Project Manager',
     email: 'apurva@gmail.com',
     pass: 'apurva123',
-    color: '#06b6d4',
     icon: Briefcase,
-    desc: 'Sprint planning, project creation & task assignment',
+    desc: 'Create projects and assign tasks',
+    iconColor: '#10B981',
+    bgColor: '#D1FAE5',
   },
   {
-    label: 'Team Member',
-    role: 'User',
+    roleKey: 'User',
+    name: 'Team Member',
     email: 'sandeep@gmail.com',
     pass: 'sandeep123',
-    color: '#10b981',
-    icon: UserCheck,
-    desc: 'Kanban task execution, comments & presence status',
+    icon: User,
+    desc: 'See your tasks and update progress',
+    iconColor: '#F59E0B',
+    bgColor: '#FEF3C7',
   },
 ];
 
+function LogoIcon() {
+  return (
+    <div
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: 'var(--accent)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#ffffff',
+        boxShadow: '0 6px 20px rgba(79, 70, 229, 0.35)',
+      }}
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+        <path d="M6 6v12M12 9v9M18 12v6" />
+      </svg>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   const { login } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const [tab, setTab] = useState('login');
+
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [selectedDemo, setSelectedDemo] = useState(null);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
 
   const [lForm, setLForm] = useState({ email: '', password: '' });
   const [rForm, setRForm] = useState({ name: '', email: '', password: '' });
 
-  const handleLogin = async () => {
+  const handleSelectDemo = (demo) => {
+    setSelectedDemo(demo.roleKey);
+    setLForm({ email: demo.email, password: demo.pass });
+    setErr('');
+  };
+
+  const handleSignIn = async (e) => {
+    if (e) e.preventDefault();
     setErr('');
     setLoading(true);
+
     try {
+      // Seed backend if demo workspace credentials selected
+      if (selectedDemo) {
+        await api.post('/auth/seed').catch(() => {});
+      }
+
       const { data } = await api.post('/auth/login', lForm);
       login(
         {
@@ -64,14 +120,16 @@ export default function LoginPage() {
       );
       navigate('/');
     } catch (e) {
-      setErr(e.response?.data?.message || 'Login failed');
+      setErr(e.response?.data?.message || 'Invalid email or password');
     }
     setLoading(false);
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (e) => {
+    if (e) e.preventDefault();
     setErr('');
     setLoading(true);
+
     try {
       const { data } = await api.post('/auth/register', rForm);
       login(
@@ -87,224 +145,312 @@ export default function LoginPage() {
       );
       navigate('/');
     } catch (e) {
-      setErr(e.response?.data?.message || 'Registration failed');
-    }
-    setLoading(false);
-  };
-
-  const fillDemo = async (email, pass) => {
-    setTab('login');
-    setLForm({ email, password: pass });
-    setErr('');
-    setLoading(true);
-    try {
-      await api.post('/auth/seed').catch(() => {});
-      const { data } = await api.post('/auth/login', { email, password: pass });
-      login(
-        {
-          _id: data._id,
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          color: data.color,
-          status: data.status,
-        },
-        data.token
-      );
-      navigate('/');
-    } catch (e) {
-      setErr(e.response?.data?.message || 'Demo login failed');
+      setErr(e.response?.data?.message || 'Failed to create account');
     }
     setLoading(false);
   };
 
   return (
-    <div className="auth-page-split">
-      {/* Left Branding Showcase */}
-      <div className="auth-branding-panel">
-        <div className="branding-header">
-          <div className="branding-logo">
-            <div className="branding-logo-icon">
-              <Layers size={28} />
-            </div>
-            <span className="branding-logo-text">TaskFlow</span>
+    <div className="login-page-centered dot-grid-bg flex flex-col items-center justify-between min-h-screen py-10 px-4">
+      {/* ── FLOATING DECORATIVE CARDS (Desktop >= 1280px, aria-hidden) ── */}
+      <div className="login-floating-layer" aria-hidden="true">
+        {/* Top-Left Floating Task Card */}
+        <div className="floating-card float-card-1">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <Badge variant="medium">Medium</Badge>
+            <span className="text-xs text-muted font-medium">Frontend</span>
           </div>
-          <span className="tf-badge tf-badge-purple">Enterprise v2.0</span>
+          <h4 className="font-semibold text-sm mb-3">Kanban drag and drop with dnd-kit</h4>
+          <div className="flex items-center justify-between text-xs text-muted">
+            <span>Due Oct 15 • 3/5 subtasks</span>
+            <div
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: '50%',
+                backgroundColor: '#10B981',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 600,
+                fontSize: 10,
+              }}
+            >
+              SK
+            </div>
+          </div>
         </div>
 
-        <div className="branding-content">
-          <h1 className="branding-headline">
-            Streamline your agile project workflows with precision.
-          </h1>
-          <p className="branding-subtext">
-            TaskFlow combines drag-and-drop Kanban execution, role-based dashboards, and live team presence in a unified workspace.
+        {/* Mid-Left Floating Sprint Ring Card */}
+        <div className="floating-card float-card-2">
+          <ProgressRing percentage={60} size={54} strokeWidth={6} label="60%" sublabel="Sprint 14 progress" />
+        </div>
+
+        {/* Bottom-Left Floating Presence Pill */}
+        <div className="floating-card float-card-3 flex items-center gap-3">
+          <AvatarStack
+            users={[
+              { name: 'Arjun Rao', color: '#6366F1', status: 'Online' },
+              { name: 'Sara Khan', color: '#10B981', status: 'Online' },
+              { name: 'Dev Nair', color: '#F59E0B', status: 'Online' },
+            ]}
+            size={24}
+          />
+          <span className="text-xs font-medium">3 teammates online</span>
+        </div>
+
+        {/* Top-Right Floating Activity Notification Card */}
+        <div className="floating-card float-card-4 flex items-start gap-3">
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              backgroundColor: '#10B981',
+              color: '#fff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 600,
+              fontSize: 12,
+              flexShrink: 0,
+            }}
+          >
+            SK
+          </div>
+          <div>
+            <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
+              <strong>Sara</strong> moved <strong>Login redesign</strong> to In Review
+            </p>
+            <span className="text-xs text-muted" style={{ fontSize: 11 }}>12 minutes ago</span>
+          </div>
+        </div>
+
+        {/* Bottom-Right Floating AI Suggestion Card */}
+        <div className="floating-card float-card-5 flex flex-col gap-2">
+          <div className="flex items-center gap-2" style={{ color: 'var(--accent-text)' }}>
+            <Sparkles size={14} />
+            <span className="text-xs font-semibold">AI suggestion</span>
+          </div>
+          <p className="text-xs text-secondary">
+            Split "Refresh token rotation" into 3 subtasks to finish before Oct 13.
           </p>
-
-          <div className="branding-feature-list">
-            <div className="branding-feature-item">
-              <CheckCircle2 size={20} className="feature-icon" />
-              <div>
-                <strong>3 Role-Based Workspaces</strong>
-                <p>Tailored dashboards for Admins, Project Managers, and Engineers.</p>
-              </div>
-            </div>
-            <div className="branding-feature-item">
-              <CheckCircle2 size={20} className="feature-icon" />
-              <div>
-                <strong>Interactive @dnd-kit Kanban</strong>
-                <p>WIP limits, priority tags, overdue alerts, and drop zone indicators.</p>
-              </div>
-            </div>
-            <div className="branding-feature-item">
-              <CheckCircle2 size={20} className="feature-icon" />
-              <div>
-                <strong>Real-Time Presence Tracking</strong>
-                <p>Automated idle detection and daily leave status cleanup.</p>
-              </div>
-            </div>
+          <div className="flex items-center gap-2 mt-1">
+            <Button size="sm" variant="primary" style={{ padding: '4px 12px', minHeight: 28, fontSize: 11 }}>
+              Apply
+            </Button>
+            <Button size="sm" variant="ghost" style={{ padding: '4px 12px', minHeight: 28, fontSize: 11 }}>
+              Dismiss
+            </Button>
           </div>
-        </div>
-
-        <div className="branding-footer">
-          <p>© 2026 TaskFlow Inc. Built with MERN Stack + Docker + Kubernetes.</p>
         </div>
       </div>
 
-      {/* Right Form & Quick Demo Area */}
-      <div className="auth-form-panel">
-        <div className="auth-box-modern">
-          <div className="auth-header">
-            <h2>Welcome back</h2>
-            <p className="auth-subtitle">Sign in to your workspace or try a quick demo login</p>
+      {/* ── MAIN CENTERED LOGIN COLUMN ────────────────────────────── */}
+      <div className="login-centered-container flex flex-col items-center w-full max-w-md my-auto">
+        {/* Header Logo + Tagline */}
+        <div className="login-logo-header flex flex-col items-center text-center mb-6">
+          <div className="flex items-center gap-3 mb-3">
+            <LogoIcon />
+            <span className="font-bold text-2xl" style={{ letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+              TaskFlow
+            </span>
+          </div>
+          <div className="tagline-pill">
+            Project management for agile teams
+          </div>
+        </div>
+
+        {/* Main Form Card */}
+        <div className="login-card-box w-full">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold mb-1">
+              {mode === 'login' ? 'Welcome back' : 'Create an account'}
+            </h1>
+            <p className="text-sm text-muted">
+              {mode === 'login'
+                ? 'Sign in to pick up where your team left off.'
+                : 'Get started with your TaskFlow workspace.'}
+            </p>
           </div>
 
-          {/* Tabs */}
-          <div className="auth-tabs-modern">
-            <button
-              className={`auth-tab-btn ${tab === 'login' ? 'active' : ''}`}
-              onClick={() => {
-                setTab('login');
-                setErr('');
-              }}
-            >
-              Sign In
-            </button>
-            <button
-              className={`auth-tab-btn ${tab === 'register' ? 'active' : ''}`}
-              onClick={() => {
-                setTab('register');
-                setErr('');
-              }}
-            >
-              Create Account
-            </button>
-          </div>
+          {err && <div className="login-error-banner mb-4">{err}</div>}
 
-          {tab === 'login' ? (
-            <div className="form-section" style={{ gap: 16 }}>
-              <div className="field">
-                <label>Email Address</label>
-                <input
-                  className="input"
-                  type="email"
-                  value={lForm.email}
-                  onChange={(e) => setLForm((f) => ({ ...f, email: e.target.value }))}
-                  placeholder="name@company.com"
-                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+          {mode === 'login' ? (
+            <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+              <Input
+                label="Email"
+                type="email"
+                icon={Mail}
+                placeholder="you@company.com"
+                value={lForm.email}
+                onChange={(e) => {
+                  setLForm({ ...lForm, email: e.target.value });
+                  setSelectedDemo(null);
+                }}
+                required
+              />
+
+              <Input
+                label="Password"
+                type="password"
+                icon={Lock}
+                placeholder="Enter your password"
+                value={lForm.password}
+                onChange={(e) => {
+                  setLForm({ ...lForm, password: e.target.value });
+                  setSelectedDemo(null);
+                }}
+                required
+              />
+
+              <div className="flex items-center justify-between text-xs">
+                <Checkbox
+                  label="Remember me"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                 />
+                <a
+                  href="#forgot"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    alert('Password reset link will be sent to your registered email.');
+                  }}
+                  className="font-medium"
+                  style={{ color: 'var(--accent-text)' }}
+                >
+                  Forgot password?
+                </a>
               </div>
-              <div className="field">
-                <label>Password</label>
-                <input
-                  className="input"
-                  type="password"
-                  value={lForm.password}
-                  onChange={(e) => setLForm((f) => ({ ...f, password: e.target.value }))}
-                  placeholder="••••••••"
-                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                />
-              </div>
-              {err && <div className="err-banner">{err}</div>}
-              <button
-                className="btn btn-primary w-full"
-                onClick={handleLogin}
-                disabled={loading}
+
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                icon={ArrowRight}
+                iconPosition="right"
+                loading={loading}
+                className="mt-2"
               >
-                {loading ? <span className="btn-spinner" /> : 'Sign In to Workspace'}
-              </button>
-            </div>
+                Sign in
+              </Button>
+            </form>
           ) : (
-            <div className="form-section" style={{ gap: 16 }}>
-              <div className="field">
-                <label>Full Name</label>
-                <input
-                  className="input"
-                  value={rForm.name}
-                  onChange={(e) => setRForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="Alex Rivera"
-                />
-              </div>
-              <div className="field">
-                <label>Work Email</label>
-                <input
-                  className="input"
-                  type="email"
-                  value={rForm.email}
-                  onChange={(e) => setRForm((f) => ({ ...f, email: e.target.value }))}
-                  placeholder="alex@company.com"
-                />
-              </div>
-              <div className="field">
-                <label>Password</label>
-                <input
-                  className="input"
-                  type="password"
-                  value={rForm.password}
-                  onChange={(e) => setRForm((f) => ({ ...f, password: e.target.value }))}
-                  placeholder="Min 6 characters"
-                  onKeyDown={(e) => e.key === 'Enter' && handleRegister()}
-                />
-              </div>
-              {err && <div className="err-banner">{err}</div>}
-              <button
-                className="btn btn-primary w-full"
-                onClick={handleRegister}
-                disabled={loading}
+            <form onSubmit={handleRegister} className="flex flex-col gap-4">
+              <Input
+                label="Full Name"
+                placeholder="Alex Rivera"
+                value={rForm.name}
+                onChange={(e) => setRForm({ ...rForm, name: e.target.value })}
+                required
+              />
+
+              <Input
+                label="Work Email"
+                type="email"
+                icon={Mail}
+                placeholder="alex@company.com"
+                value={rForm.email}
+                onChange={(e) => setRForm({ ...rForm, email: e.target.value })}
+                required
+              />
+
+              <Input
+                label="Password"
+                type="password"
+                icon={Lock}
+                placeholder="Min 6 characters"
+                value={rForm.password}
+                onChange={(e) => setRForm({ ...rForm, password: e.target.value })}
+                required
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                icon={ArrowRight}
+                iconPosition="right"
+                loading={loading}
+                className="mt-2"
               >
-                {loading ? <span className="btn-spinner" /> : 'Create Account'}
-              </button>
-            </div>
+                Create Account
+              </Button>
+            </form>
           )}
 
-          {/* Quick Demo Section */}
-          <div className="demo-divider-modern">
-            <span>Or explore with a Quick Demo Account</span>
+          {/* Demo Workspace Selector */}
+          <div className="demo-divider my-6">
+            <span>or explore a demo workspace</span>
           </div>
 
-          <div className="demo-cards-stack">
-            {DEMOS.map((d) => {
-              const IconComp = d.icon;
+          <div className="demo-role-list flex flex-col gap-3">
+            {DEMOS.map((demo) => {
+              const IconComponent = demo.icon;
+              const isSelected = selectedDemo === demo.roleKey;
               return (
                 <div
-                  key={d.label}
-                  className="demo-card-item"
-                  onClick={() => fillDemo(d.email, d.pass)}
+                  key={demo.roleKey}
+                  className={`demo-role-card ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleSelectDemo(demo)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSelectDemo(demo)}
                 >
-                  <div className="demo-card-icon" style={{ background: d.color }}>
-                    <IconComp size={20} color="#fff" />
+                  <div
+                    className="demo-icon-square"
+                    style={{ backgroundColor: demo.bgColor, color: demo.iconColor }}
+                  >
+                    <IconComponent size={20} />
                   </div>
-                  <div className="demo-card-info">
-                    <div className="demo-card-header">
-                      <span className="demo-card-title">{d.label}</span>
-                      <span className="tf-badge tf-badge-sm">{d.role}</span>
-                    </div>
-                    <p className="demo-card-desc">{d.desc}</p>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm text-primary">{demo.name}</h4>
+                    <p className="text-xs text-muted truncate">{demo.desc}</p>
                   </div>
-                  <ArrowRight size={18} className="demo-card-arrow" />
+                  <ChevronRight size={18} className="demo-chevron" />
                 </div>
               );
             })}
           </div>
+        </div>
+
+        {/* Account toggle & feature highlights below card */}
+        <div className="flex flex-col items-center text-center mt-6 gap-4">
+          <p className="text-sm text-muted">
+            {mode === 'login' ? 'New here? ' : 'Already have an account? '}
+            <button
+              type="button"
+              className="font-semibold"
+              style={{ color: 'var(--accent-text)' }}
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login');
+                setErr('');
+              }}
+            >
+              {mode === 'login' ? 'Create an account' : 'Sign in'}
+            </button>
+          </p>
+
+          <div className="flex items-center justify-center gap-6 text-xs text-muted flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <Shield size={14} /> Role-based access
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Sun size={14} /> Live presence
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Sparkles size={14} /> AI assistant
+            </span>
+          </div>
+
+          <footer className="flex items-center gap-4 text-xs text-muted mt-2">
+            <a href="#privacy" onClick={(e) => e.preventDefault()}>Privacy</a>
+            <span>•</span>
+            <a href="#terms" onClick={(e) => e.preventDefault()}>Terms</a>
+            <span>•</span>
+            <a href="#help" onClick={(e) => e.preventDefault()}>Help</a>
+          </footer>
         </div>
       </div>
     </div>
