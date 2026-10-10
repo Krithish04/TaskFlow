@@ -1,136 +1,141 @@
-import { useState, useEffect, useRef } from 'react'
-import { useAuth } from '../../context/AuthContext'
-import { useToast } from '../../context/ToastContext'
-import api from '../../api/axios'
-import Avatar from './Avatar'
-import { formatDate, isOverdue, priorityClass, statusClass, timeAgo } from '../../utils'
+import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import Drawer from './Drawer';
+import Avatar from './Avatar';
+import Badge from './Badge';
+import Button from './Button';
+import api from '../../api/axios';
+import { formatDate, isOverdue, priorityClass, statusClass, timeAgo } from '../../utils';
+import { Send, Clock, User, Calendar, Tag, MessageSquare } from 'lucide-react';
 
 export default function TaskViewModal({ task, open, onClose }) {
-  const { user }    = useAuth()
-  const { toast }   = useToast()
-  const [comments, setComments] = useState([])
-  const [text, setText]         = useState('')
-  const [sending, setSending]   = useState(false)
-  const [loading, setLoading]   = useState(false)
-  const bottomRef = useRef(null)
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [comments, setComments] = useState([]);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef(null);
 
   useEffect(() => {
-    if (open && task) fetchComments()
-  }, [open, task])
+    if (open && task) fetchComments();
+  }, [open, task]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [comments])
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [comments]);
 
   const fetchComments = async () => {
-    setLoading(true)
+    if (!task) return;
+    setLoading(true);
     try {
-      const { data } = await api.get(`/comments/${task._id}`)
-      setComments(data)
-    } catch { /* silent */ }
-    setLoading(false)
-  }
+      const { data } = await api.get(`/comments/${task._id}`);
+      setComments(Array.isArray(data) ? data : data?.data || []);
+    } catch {
+      /* silent */
+    }
+    setLoading(false);
+  };
 
   const send = async () => {
-    if (!text.trim() || sending) return
-    setSending(true)
+    if (!text.trim() || sending) return;
+    setSending(true);
     try {
-      const { data } = await api.post(`/comments/${task._id}`, { text: text.trim() })
-      setComments(prev => [...prev, data])
-      setText('')
+      const { data } = await api.post(`/comments/${task._id}`, { text: text.trim() });
+      setComments((prev) => [...prev, data]);
+      setText('');
     } catch (err) {
-      toast(err.response?.data?.message || 'Failed to send', 'err')
+      toast(err.response?.data?.message || 'Failed to send comment', 'error');
     }
-    setSending(false)
-  }
+    setSending(false);
+  };
 
-  if (!open || !task) return null
-  const overdue = isOverdue(task.dueDate, task.status)
+  if (!task) return null;
+  const overdue = isOverdue(task.dueDate, task.status);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal modal-wide" onClick={e => e.stopPropagation()}>
-        <div className="modal-hdr">
-          <h3 style={{ maxWidth: '70%' }}>{task.title}</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="task-view">
-          {/* Left: Task info */}
-          <div className="task-info">
-            <div className="info-row">
-              <span className="info-lbl">Status</span>
-              <span className={`tag ${statusClass(task.status)}`}>{task.status}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-lbl">Priority</span>
-              <span className={`tag ${priorityClass(task.priority)}`}>{task.priority}</span>
-            </div>
-            <div className="info-row">
-              <span className="info-lbl">Assigned To</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Avatar user={task.assignedTo} size="sm" />
-                <span style={{ fontSize: 13 }}>{task.assignedTo?.name}</span>
-              </span>
-            </div>
-            <div className="info-row">
-              <span className="info-lbl">Created By</span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <Avatar user={task.createdBy} size="sm" />
-                <span style={{ fontSize: 13 }}>{task.createdBy?.name}</span>
-              </span>
-            </div>
-            <div className="info-row">
-              <span className="info-lbl">Due Date</span>
-              <span style={{ fontSize: 13, color: overdue ? 'var(--rose)' : 'var(--text)' }}>
-                {overdue ? '⚠ ' : ''}{formatDate(task.dueDate)}
-              </span>
-            </div>
-            {task.description && (
-              <div className="task-desc">{task.description}</div>
-            )}
+    <Drawer isOpen={open} onClose={onClose} title={task.title} size="lg">
+      <div className="task-drawer-container">
+        {/* Top Metadata */}
+        <div className="task-drawer-meta-grid">
+          <div className="meta-item">
+            <span className="meta-label"><Tag size={14} /> Status</span>
+            <span className={`tf-badge status-${task.status?.toLowerCase().replace(/\s+/g, '-')}`}>
+              {task.status}
+            </span>
           </div>
 
-          {/* Right: Comments */}
-          <div className="chat-wrap">
-            <div className="chat-title">💬 Comments ({comments.length})</div>
+          <div className="meta-item">
+            <span className="meta-label"><Tag size={14} /> Priority</span>
+            <span className={`tf-badge priority-${task.priority?.toLowerCase()}`}>
+              {task.priority}
+            </span>
+          </div>
 
-            <div className="chat-msgs">
-              {loading && <div className="chat-empty"><div className="spinner" /></div>}
-              {!loading && comments.length === 0 && (
-                <div className="chat-empty">No comments yet. Start the conversation!</div>
-              )}
-              {comments.map(c => {
-                const mine = c.author?._id === user?._id
-                return (
-                  <div key={c._id} className={`chat-msg ${mine ? 'mine' : ''}`}>
-                    <Avatar user={c.author} size="sm" />
-                    <div className="chat-bubble">
-                      <div className="chat-author">{c.author?.name}</div>
-                      <div className="chat-text">{c.text}</div>
-                      <div className="chat-time">{timeAgo(c.createdAt)}</div>
-                    </div>
+          <div className="meta-item">
+            <span className="meta-label"><User size={14} /> Assignee</span>
+            <div className="flex items-center gap-2">
+              <Avatar name={task.assignedTo?.name || 'Unassigned'} size={24} color={task.assignedTo?.color || '#6366f1'} />
+              <span className="text-sm font-semibold">{task.assignedTo?.name || 'Unassigned'}</span>
+            </div>
+          </div>
+
+          <div className="meta-item">
+            <span className="meta-label"><Calendar size={14} /> Due Date</span>
+            <span className={`text-sm ${overdue ? 'text-danger font-semibold' : 'text-muted'}`}>
+              {overdue ? '⚠ ' : ''}{formatDate(task.dueDate)}
+            </span>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="drawer-section-box">
+          <h4 className="section-box-title">Description</h4>
+          <p className="section-box-desc">{task.description || 'No description provided for this task.'}</p>
+        </div>
+
+        {/* Discussion Comments Thread */}
+        <div className="drawer-comments-box">
+          <div className="comments-header font-semibold">
+            <MessageSquare size={16} /> Activity & Discussion ({comments.length})
+          </div>
+
+          <div className="comments-stream">
+            {loading && <div className="comments-loading"><div className="btn-spinner" /></div>}
+            {!loading && comments.length === 0 && (
+              <div className="comments-empty">No comments yet. Start the conversation!</div>
+            )}
+            {comments.map((c) => {
+              const mine = c.author?._id === user?._id;
+              return (
+                <div key={c._id} className={`comment-bubble-row ${mine ? 'is-mine' : ''}`}>
+                  <Avatar name={c.author?.name || 'Member'} color={c.author?.color || '#6366f1'} size={32} />
+                  <div className="comment-bubble-content">
+                    <div className="comment-author-name">{c.author?.name}</div>
+                    <div className="comment-text-body">{c.text}</div>
+                    <div className="comment-timestamp">{timeAgo(c.createdAt)}</div>
                   </div>
-                )
-              })}
-              <div ref={bottomRef} />
-            </div>
+                </div>
+              );
+            })}
+            <div ref={bottomRef} />
+          </div>
 
-            <div className="chat-input">
-              <input
-                className="input"
-                value={text}
-                onChange={e => setText(e.target.value)}
-                placeholder="Write a comment…"
-                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && send()}
-              />
-              <button className="btn btn-primary" onClick={send} disabled={sending || !text.trim()}>
-                {sending ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Send'}
-              </button>
-            </div>
+          <div className="comment-input-area">
+            <input
+              className="input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Write a comment..."
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && send()}
+            />
+            <Button icon={Send} onClick={send} loading={sending} disabled={!text.trim()}>
+              Send
+            </Button>
           </div>
         </div>
       </div>
-    </div>
-  )
+    </Drawer>
+  );
 }

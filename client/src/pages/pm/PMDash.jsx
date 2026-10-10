@@ -1,221 +1,343 @@
-import { useState, useEffect, useCallback } from 'react'
-import Sidebar       from '../../components/layout/Sidebar'
-import KanbanBoard   from '../../components/common/KanbanBoard'
-import TaskModal     from '../../components/common/TaskModal'
-import TaskViewModal from '../../components/common/TaskViewModal'
-import StatCard      from '../../components/common/StatCard'
-import Avatar        from '../../components/common/Avatar'
-import StatusDot     from '../../components/common/StatusDot' // Added
-import PMProjects    from './PMProjects'
-import api           from '../../api/axios'
-import { useAuth }   from '../../context/AuthContext'
-import { useToast }  from '../../context/ToastContext'
-import { statusClass, priorityClass, formatDate, isOverdue } from '../../utils'
-import { useStatus } from '../../hooks/useStatus'
+import { useState, useEffect, useCallback } from 'react';
+import AppShell from '../../components/layout/AppShell';
+import KanbanBoard from '../../components/common/KanbanBoard';
+import TaskModal from '../../components/common/TaskModal';
+import TaskViewModal from '../../components/common/TaskViewModal';
+import StatCard from '../../components/common/StatCard';
+import Avatar from '../../components/common/Avatar';
+import StatusDot from '../../components/common/StatusDot';
+import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
+import PMProjects from './PMProjects';
+import api from '../../api/axios';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useStatus } from '../../hooks/useStatus';
+import { statusClass, priorityClass, formatDate, isOverdue } from '../../utils';
+import {
+  Kanban,
+  PlusCircle,
+  CheckSquare,
+  Users,
+  FolderGit2,
+  Plus,
+  Trash2,
+  Edit,
+} from 'lucide-react';
 
 const LINKS = [
-  { id: 'kanban',   label: 'Kanban Board', icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zm8 0a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2h-2zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zm8 0a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2h-2z"/></svg> },
-  { id: 'create',   label: 'Create Task',  icon: <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd"/></svg> },
-  { id: 'mytasks',  label: 'My Tasks',     icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg> },
-  { id: 'team',     label: 'Team',         icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg> },
-  { id: 'projects', label: 'Projects',     icon: <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/></svg> },
-]
+  { id: 'kanban', label: 'Kanban Board', icon: <Kanban size={18} /> },
+  { id: 'create', label: 'Create Task', icon: <PlusCircle size={18} /> },
+  { id: 'mytasks', label: 'My Tasks', icon: <CheckSquare size={18} /> },
+  { id: 'team', label: 'Team', icon: <Users size={18} /> },
+  { id: 'projects', label: 'Projects', icon: <FolderGit2 size={18} /> },
+];
 
 export default function PMDash() {
-  useStatus() // Handles self heartbeat
-  const { user }  = useAuth()
-  const { toast } = useToast()
-  const [active, setActive]     = useState('kanban')
-  const [tasks,  setTasks]      = useState([])
-  const [users,  setUsers]      = useState([])
-  const [viewTask, setViewTask] = useState(null)
-  const [editTask, setEditTask] = useState(null)
-  const [showCreate, setShowCreate] = useState(false)
-  const [saving, setSaving]     = useState(false)
+  useStatus();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [active, setActive] = useState('kanban');
+  const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [viewTask, setViewTask] = useState(null);
+  const [editTask, setEditTask] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const [t, u] = await Promise.all([api.get('/tasks'), api.get('/users/assignable')])
-      setTasks(t.data); setUsers(u.data)
-    } catch { toast('Failed to load', 'err') }
-  }, [toast])
+      const [t, u] = await Promise.all([
+        api.get('/tasks'),
+        api.get('/users/assignable'),
+      ]);
+      setTasks(Array.isArray(t.data) ? t.data : t.data?.data || []);
+      setUsers(Array.isArray(u.data) ? u.data : u.data?.data || []);
+    } catch {
+      toast('Failed to load tasks and team members', 'error');
+    }
+  }, [toast]);
 
-  useEffect(() => { 
-    load() 
-    
-    // UPDATED: Poll status every 30 seconds to keep teammate dots fresh
-    const poll = setInterval(load, 30000)
-    return () => clearInterval(poll)
-  }, [load])
+  useEffect(() => {
+    load();
+    const poll = setInterval(load, 30000);
+    return () => clearInterval(poll);
+  }, [load]);
 
   const handleCreate = async (form) => {
-    setSaving(true)
+    setSaving(true);
     try {
-      const { data } = await api.post('/tasks', form)
-      setTasks(prev => [data, ...prev])
-      setShowCreate(false)
-      toast('Task created!')
-      setActive('kanban')
-    } catch (e) { toast(e.response?.data?.message || 'Error', 'err') }
-    setSaving(false)
-  }
+      const { data } = await api.post('/tasks', form);
+      setTasks((prev) => [data, ...prev]);
+      setShowCreate(false);
+      toast('Task created successfully!', 'success');
+      setActive('kanban');
+    } catch (e) {
+      toast(e.response?.data?.message || 'Failed to create task', 'error');
+    }
+    setSaving(false);
+  };
 
   const handleEdit = async (form) => {
-    setSaving(true)
+    setSaving(true);
     try {
-      const { data } = await api.put(`/tasks/${editTask._id}`, form)
-      setTasks(prev => prev.map(t => t._id === data._id ? data : t))
-      setEditTask(null)
-      toast('Task updated')
-    } catch (e) { toast(e.response?.data?.message || 'Error', 'err') }
-    setSaving(false)
-  }
+      const { data } = await api.put(`/tasks/${editTask._id}`, form);
+      setTasks((prev) => prev.map((t) => (t._id === data._id ? data : t)));
+      setEditTask(null);
+      toast('Task updated', 'success');
+    } catch (e) {
+      toast(e.response?.data?.message || 'Failed to update task', 'error');
+    }
+    setSaving(false);
+  };
 
   const handleDelete = async (id) => {
-    await api.delete(`/tasks/${id}`)
-    setTasks(prev => prev.filter(t => t._id !== id))
-    toast('Task deleted', 'err')
-  }
-
-  const handleStatusChange = useCallback(async (taskId, newStatus, originalTask) => {
-    setTasks(prev => prev.map(t => t._id === taskId ? { ...t, status: newStatus } : t))
+    if (!window.confirm('Delete this task?')) return;
     try {
-      const { data } = await api.put(`/tasks/${taskId}`, { status: newStatus })
-      setTasks(prev => prev.map(t => t._id === data._id ? data : t))
-      toast(`Moved to ${newStatus}`)
-    } catch (e) {
-      setTasks(prev => prev.map(t => t._id === taskId ? originalTask : t))
-      toast(e.response?.data?.message || 'Failed to update status', 'err')
+      await api.delete(`/tasks/${id}`);
+      setTasks((prev) => prev.filter((t) => t._id !== id));
+      toast('Task deleted', 'info');
+    } catch {
+      toast('Failed to delete task', 'error');
     }
-  }, [toast])
+  };
+
+  const handleStatusChange = useCallback(
+    async (taskId, newStatus, originalTask) => {
+      setTasks((prev) =>
+        prev.map((t) => (t._id === taskId ? { ...t, status: newStatus } : t))
+      );
+      try {
+        const { data } = await api.put(`/tasks/${taskId}`, { status: newStatus });
+        setTasks((prev) => prev.map((t) => (t._id === data._id ? data : t)));
+        toast(`Moved to ${newStatus}`, 'success');
+      } catch (e) {
+        setTasks((prev) => prev.map((t) => (t._id === taskId ? originalTask : t)));
+        toast(e.response?.data?.message || 'Failed to update status', 'error');
+      }
+    },
+    [toast]
+  );
 
   const stats = {
     total: tasks.length,
-    pending: tasks.filter(t => t.status === 'Pending').length,
-    inProgress: tasks.filter(t => t.status === 'In Progress').length,
-    completed: tasks.filter(t => t.status === 'Completed').length,
-  }
+    pending: tasks.filter((t) => t.status === 'Pending').length,
+    inProgress: tasks.filter((t) => t.status === 'In Progress').length,
+    completed: tasks.filter((t) => t.status === 'Completed').length,
+  };
 
-  const myTasks = tasks.filter(t => t.createdBy?._id === user?._id || t.assignedTo?._id === user?._id)
+  const myTasks = tasks.filter(
+    (t) => t.createdBy?._id === user?._id || t.assignedTo?._id === user?._id
+  );
 
   return (
-    <div className="layout">
-      <Sidebar links={LINKS} active={active} onNav={id => { setActive(id); if(id==='create') setShowCreate(true) }} />
-
-      <div className="main">
-        {/* Kanban */}
-        {active === 'kanban' && (
-          <div className="page animate-fadeIn">
-            <div className="page-hdr">
-              <div><h1 className="page-title">Kanban Board</h1><p className="page-sub">Manage all tasks across the team</p></div>
-              <button className="btn btn-primary" onClick={() => setShowCreate(true)}>+ New Task</button>
+    <AppShell
+      links={LINKS}
+      active={active}
+      onNav={(id) => {
+        setActive(id);
+        if (id === 'create') setShowCreate(true);
+      }}
+      onSelectTask={setViewTask}
+    >
+      {active === 'kanban' && (
+        <div className="page-container animate-fadeIn">
+          <div className="page-header-title">
+            <div>
+              <h1 className="title-text">Kanban Board</h1>
+              <p className="subtitle-text">Manage agile tasks, drag-and-drop workflow, and sprint progress.</p>
             </div>
-            <div className="stats-grid">
-              <StatCard label="Total"       value={stats.total}      type="total"    />
-              <StatCard label="Pending"     value={stats.pending}    type="pending"  />
-              <StatCard label="In Progress" value={stats.inProgress} type="progress" />
-              <StatCard label="Completed"   value={stats.completed}  type="done"     />
-            </div>
-            <KanbanBoard tasks={tasks} onView={setViewTask} onEdit={t => { setEditTask(t); setShowCreate(false) }} onDelete={handleDelete} onStatusChange={handleStatusChange} canEdit />
+            <Button icon={Plus} onClick={() => setShowCreate(true)}>
+              New Task
+            </Button>
           </div>
-        )}
 
-        {/* Create task */}
-        {active === 'create' && (
-          <div className="page animate-fadeIn">
-            <div className="page-hdr">
-              <div><h1 className="page-title">Create Task</h1><p className="page-sub">Assign work to team members</p></div>
-            </div>
-            <div className="form-card">
-              <TaskModal
-                open={true} onClose={() => setActive('kanban')} onSave={handleCreate}
-                task={null} users={users} loading={saving}
-                inline
-              />
+          <div className="stats-grid-modern">
+            <StatCard label="Total Tasks" value={stats.total} type="total" sparkline={[2, 4, 6, 8, stats.total]} />
+            <StatCard label="Pending" value={stats.pending} type="pending" sparkline={[1, 2, 3, stats.pending]} />
+            <StatCard label="In Progress" value={stats.inProgress} type="progress" sparkline={[0, 2, 4, stats.inProgress]} />
+            <StatCard label="Completed" value={stats.completed} type="done" sparkline={[1, 3, 5, stats.completed]} />
+          </div>
+
+          <KanbanBoard
+            tasks={tasks}
+            onView={setViewTask}
+            onEdit={(t) => {
+              setEditTask(t);
+              setShowCreate(false);
+            }}
+            onDelete={handleDelete}
+            onStatusChange={handleStatusChange}
+            onQuickAdd={() => setShowCreate(true)}
+            canEdit
+          />
+        </div>
+      )}
+
+      {active === 'create' && (
+        <div className="page-container animate-fadeIn">
+          <div className="page-header-title">
+            <div>
+              <h1 className="title-text">Create Task</h1>
+              <p className="subtitle-text">Assign work items, set deadlines, and specify priority levels.</p>
             </div>
           </div>
-        )}
+          <div className="card-panel">
+            <TaskModal
+              open={true}
+              onClose={() => setActive('kanban')}
+              onSave={handleCreate}
+              task={null}
+              users={users}
+              loading={saving}
+              inline
+            />
+          </div>
+        </div>
+      )}
 
-        {/* My Tasks */}
-        {active === 'mytasks' && (
-          <div className="page animate-fadeIn">
-            <div className="page-hdr">
-              <div><h1 className="page-title">My Tasks</h1><p className="page-sub">Tasks you created or are assigned to you</p></div>
+      {active === 'mytasks' && (
+        <div className="page-container animate-fadeIn">
+          <div className="page-header-title">
+            <div>
+              <h1 className="title-text">My Assigned Tasks</h1>
+              <p className="subtitle-text">Tasks created by or assigned to you.</p>
             </div>
-            {myTasks.length === 0 ? (
-              <div className="empty"><div className="empty-icon">📋</div><h4>No tasks yet</h4></div>
-            ) : (
-              <div className="task-list">
-                {myTasks.map(t => (
-                  <div key={t._id} className="task-row" onClick={() => setViewTask(t)}>
-                    <div className="task-row-main">
-                      <div className="task-row-title">{t.title}</div>
-                      <div className="task-row-meta">
-                        <span className={`tag ${priorityClass(t.priority)}`}>{t.priority}</span>
-                        <span className={`tag ${statusClass(t.status)}`}>{t.status}</span>
-                        {t.assignedTo && <span style={{ fontSize:11, color:'var(--text-2)', display:'flex', alignItems:'center', gap:5 }}><Avatar user={t.assignedTo} size="sm"/>{t.assignedTo.name}</span>}
-                      </div>
+          </div>
+
+          <div className="card-panel no-padding">
+            <div className="table-responsive">
+              <table className="tf-table">
+                <thead>
+                  <tr>
+                    <th>Task Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assignee</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myTasks.map((t) => (
+                    <tr key={t._id} onClick={() => setViewTask(t)} className="clickable-row">
+                      <td className="font-semibold">{t.title}</td>
+                      <td>
+                        <span className={`tf-badge priority-${t.priority?.toLowerCase()}`}>{t.priority}</span>
+                      </td>
+                      <td>
+                        <span className={`tf-badge status-${t.status?.toLowerCase().replace(/\s+/g, '-')}`}>{t.status}</span>
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <Avatar name={t.assignedTo?.name || 'Unassigned'} size={24} color={t.assignedTo?.color || '#6366f1'} />
+                          <span className="text-sm">{t.assignedTo?.name || 'Unassigned'}</span>
+                        </div>
+                      </td>
+                      <td className={isOverdue(t.dueDate, t.status) ? 'text-danger font-semibold' : 'text-muted'}>
+                        {formatDate(t.dueDate)}
+                      </td>
+                      <td>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <button className="btn-icon" onClick={() => setEditTask(t)}>
+                            <Edit size={16} />
+                          </button>
+                          <button className="btn-icon text-danger" onClick={() => handleDelete(t._id)}>
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {active === 'team' && (
+        <div className="page-container animate-fadeIn">
+          <div className="page-header-title">
+            <div>
+              <h1 className="title-text">Team Workload & Presence</h1>
+              <p className="subtitle-text">Monitor active team member presence and assigned workload.</p>
+            </div>
+          </div>
+
+          <div className="grid-cards-3col">
+            {users.map((u) => {
+              const userTasks = tasks.filter((t) => t.assignedTo?._id === u._id);
+              const activeCount = userTasks.filter((t) => t.status === 'In Progress').length;
+              const doneCount = userTasks.filter((t) => t.status === 'Completed').length;
+              return (
+                <div key={u._id} className="team-card-modern">
+                  <div className="team-card-header">
+                    <div style={{ position: 'relative' }}>
+                      <Avatar name={u.name} color={u.color || '#6366f1'} size={44} />
+                      <StatusDot
+                        status={u.status || 'Offline'}
+                        size={12}
+                        style={{
+                          position: 'absolute',
+                          bottom: 0,
+                          right: 0,
+                          border: '2px solid var(--bg-card)',
+                        }}
+                      />
                     </div>
-                    <div className="task-row-actions" onClick={e => e.stopPropagation()}>
-                      <button className="btn btn-ghost btn-xs" onClick={() => setEditTask(t)}>Edit</button>
-                      <button className="btn btn-danger btn-xs" onClick={() => handleDelete(t._id)}>Delete</button>
+                    <div>
+                      <h4 className="team-card-name">{u.name}</h4>
+                      <p className="team-card-email">{u.email}</p>
+                      <span className="tf-badge tf-badge-sm">{u.role}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* Team UPDATED */}
-        {active === 'team' && (
-          <div className="page animate-fadeIn">
-            <div className="page-hdr">
-              <div><h1 className="page-title">Team</h1><p className="page-sub">Member workload overview</p></div>
-            </div>
-            <div className="team-grid">
-              {users.map(u => {
-                const ut       = tasks.filter(t => t.assignedTo?._id === u._id)
-                const active_t = ut.filter(t => t.status === 'In Progress').length
-                const done     = ut.filter(t => t.status === 'Completed').length
-                return (
-                  <div key={u._id} className="team-card">
-                    <div className="team-card-top">
-                      {/* STEP 6: Wrap Avatar and add StatusDot */}
-                      <div style={{ position: 'relative', display: 'inline-block' }}>
-                        <Avatar user={u} size="lg" />
-                        <StatusDot
-                          status={u.status || 'Offline'}
-                          size={12}
-                          style={{ position: 'absolute', bottom: 2, right: 2, border: '2px solid var(--bg-card)' }}
-                        />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 14 }}>{u.name}</div>
-                        <div style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 4 }}>{u.email}</div>
-                        <span className={`badge badge-${u.role.toLowerCase()}`}>{u.role}</span>
-                      </div>
+                  <div className="team-card-stats-row">
+                    <div className="stat-box">
+                      <span className="stat-num">{userTasks.length}</span>
+                      <span className="stat-label">Total</span>
                     </div>
-                    <div className="team-stats">
-                      <div className="team-stat"><div className="ts-num">{ut.length}</div><div className="ts-lbl">Total</div></div>
-                      <div className="team-stat"><div className="ts-num" style={{ color:'var(--accent)' }}>{active_t}</div><div className="ts-lbl">Active</div></div>
-                      <div className="team-stat"><div className="ts-num" style={{ color:'var(--teal)' }}>{done}</div><div className="ts-lbl">Done</div></div>
+                    <div className="stat-box">
+                      <span className="stat-num active">{activeCount}</span>
+                      <span className="stat-label">Active</span>
+                    </div>
+                    <div className="stat-box">
+                      <span className="stat-num done">{doneCount}</span>
+                      <span className="stat-label">Done</span>
                     </div>
                   </div>
-                )
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Projects */}
-        {active === 'projects' && <PMProjects />}
-      </div>
+      {active === 'projects' && <PMProjects />}
 
-      {/* Modals */}
-      <TaskModal open={showCreate && active !== 'create'} onClose={() => setShowCreate(false)} onSave={handleCreate} task={null} users={users} loading={saving} />
-      <TaskModal open={!!editTask} onClose={() => setEditTask(null)} onSave={handleEdit} task={editTask} users={users} loading={saving} />
-      <TaskViewModal task={viewTask} open={!!viewTask} onClose={() => setViewTask(null)} />
-    </div>
-  )
+      {/* Task Modal & View Modal */}
+      <TaskModal
+        open={showCreate && active !== 'create'}
+        onClose={() => setShowCreate(false)}
+        onSave={handleCreate}
+        task={null}
+        users={users}
+        loading={saving}
+      />
+      <TaskModal
+        open={!!editTask}
+        onClose={() => setEditTask(null)}
+        onSave={handleEdit}
+        task={editTask}
+        users={users}
+        loading={saving}
+      />
+      <TaskViewModal
+        task={viewTask}
+        open={!!viewTask}
+        onClose={() => setViewTask(null)}
+      />
+    </AppShell>
+  );
 }
