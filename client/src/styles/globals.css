@@ -1,82 +1,166 @@
-/* ── Global Design Tokens ─────────────────────────── */
-:root {
-  --bg:          #0c0e18;
-  --surface:     #13162b;
-  --surface2:    #1b1f38;
-  --surface3:    #232848;
-  --border:      rgba(255,255,255,0.07);
-  --border2:     rgba(255,255,255,0.12);
-  --border3:     rgba(255,255,255,0.18);
-
-  --accent:      #7c6dfa;
-  --accent-dim:  rgba(124,109,250,0.15);
-  --teal:        #2de2c8;
-  --teal-dim:    rgba(45,226,200,0.13);
-  --amber:       #f5a623;
-  --amber-dim:   rgba(245,166,35,0.13);
-  --rose:        #ff6b6b;
-  --rose-dim:    rgba(255,107,107,0.13);
-  --green:       #4ade80;
-  --green-dim:   rgba(74,222,128,0.13);
-
-  --text:        #eef0ff;
-  --text-2:      #9ba3cc;
-  --text-3:      #5c6490;
-
-  --pending-c:   var(--amber);
-  --progress-c:  var(--accent);
-  --done-c:      var(--teal);
-
-  --radius-sm:   6px;
-  --radius-md:   10px;
-  --radius-lg:   14px;
-  --radius-xl:   20px;
-
-  --shadow-sm:   0 2px 8px rgba(0,0,0,0.3);
-  --shadow-md:   0 4px 20px rgba(0,0,0,0.4);
-  --shadow-lg:   0 8px 40px rgba(0,0,0,0.5);
-
-  --font:        'DM Sans', system-ui, sans-serif;
-  --font-mono:   'DM Mono', monospace;
-
-  --sidebar-w:   240px;
-  --header-h:    60px;
+/* ── Reset & Global Typography ─────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* ── Reset ────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 14px; -webkit-font-smoothing: antialiased; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.6; min-height: 100vh; }
-a { text-decoration: none; color: inherit; }
-button { font-family: inherit; cursor: pointer; }
-input, select, textarea { font-family: inherit; }
-img { max-width: 100%; }
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
 
-/* ── Scrollbar ────────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border3); border-radius: 4px; }
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
 
-/* ── Utility classes ──────────────────────────────── */
-.flex   { display: flex; }
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  letter-spacing: var(--letter-spacing-tight);
+  font-weight: 600;
+}
+
+h1 { font-size: 1.875rem; font-weight: 700; }
+h2 { font-size: 1.5rem; font-weight: 700; }
+h3 { font-size: 1.125rem; font-weight: 600; }
+h4 { font-size: 1rem; font-weight: 600; }
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+/* ── Focus Outline (WCAG AA Accessibility) ─────────────── */
+*:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Dot Grid Background (Radial-gradient dots, 26px spacing) ── */
+.dot-grid-bg {
+  background-color: var(--bg-app);
+  background-image: radial-gradient(var(--border-hover) 1.2px, transparent 1.2px);
+  background-size: 26px 26px;
+}
+
+[data-theme="dark"] .dot-grid-bg {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1.2px, transparent 1.2px);
+}
+
+/* ── Scrollbars ────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: var(--radius-full);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+/* ── Utility Classes ────────────────────────────────── */
+.flex { display: flex; }
 .flex-1 { flex: 1; }
+.flex-col { display: flex; flex-direction: column; }
 .items-center { align-items: center; }
+.items-start { align-items: flex-start; }
 .justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+
 .gap-1 { gap: 4px; }
 .gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
 .gap-4 { gap: 16px; }
+.gap-6 { gap: 24px; }
+
 .w-full { width: 100%; }
-.text-muted { color: var(--text-2); }
-.text-sm { font-size: 12px; }
+.h-full { height: 100%; }
+
+.text-muted { color: var(--text-muted); }
+.text-secondary { color: var(--text-secondary); }
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-lg { font-size: var(--text-lg); }
+
+.font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
-.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.font-bold { font-weight: 700; }
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ── Animations ───────────────────────────────────── */
-@keyframes fadeIn  { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
-@keyframes slideIn { from { opacity:0; transform: translateX(-8px); } to { opacity:1; transform:none; } }
-@keyframes spin    { to { transform: rotate(360deg); } }
-@keyframes pulse   { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-.animate-fadeIn  { animation: fadeIn 0.25s ease both; }
-.animate-slideIn { animation: slideIn 0.2s ease both; }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes floatCard {
+  0%, 100% { transform: translateY(0px) rotate(var(--rotate-deg, 0deg)); }
+  50% { transform: translateY(-8px) rotate(var(--rotate-deg, 0deg)); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn var(--transition-normal) ease both;
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeIn,
+  .animate-spin,
+  .float-card {
+    animation: none !important;
+    transform: none !important;
+  }
+}

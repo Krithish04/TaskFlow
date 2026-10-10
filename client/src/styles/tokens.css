@@ -1,66 +1,63 @@
 /* ── TaskFlow Design Tokens & Theme System ─────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "@fontsource/geist/400.css";
+@import "@fontsource/geist/500.css";
+@import "@fontsource/geist/600.css";
+@import "@fontsource/geist/700.css";
 
 :root {
+  /* ── Accent Color (Single source of truth) ── */
+  --accent:          #4F46E5;
+  --accent-hover:    #3730A3;
+  --accent-soft:     #EEF0FF;
+  --accent-text:     #4F46E5;
+  --focus-ring:      #A5A3FF;
+
   /* ── Base Theme Setup (Light Mode Defaults) ── */
-  --bg-app:          #f8fafc;
-  --bg-surface:      #ffffff;
-  --bg-surface-hover: #f1f5f9;
-  --bg-surface-active:#e2e8f0;
-  --bg-card:         #ffffff;
-  --bg-sidebar:      #0f172a;
-  --bg-sidebar-hover: rgba(255, 255, 255, 0.08);
-  --bg-sidebar-active: rgba(99, 102, 241, 0.18);
-  --bg-header:       rgba(255, 255, 255, 0.85);
+  --bg-app:          #F6F7FB;
+  --bg-surface:      #FFFFFF;
+  --bg-surface-hover:#F1F3FB;
+  --bg-surface-active:#E6E8F0;
+  --bg-card:         #FFFFFF;
+  --bg-sidebar:      #FFFFFF;
+  --bg-sidebar-hover: rgba(79, 70, 229, 0.06);
+  --bg-sidebar-active: rgba(79, 70, 229, 0.10);
+  --bg-header:       rgba(255, 255, 255, 0.90);
 
-  --border:          #e2e8f0;
-  --border-hover:    #cbd5e1;
-  --border-strong:   #94a3b8;
-  --border-sidebar:  rgba(255, 255, 255, 0.1);
+  --border:          #E6E8F0;
+  --border-hover:    #D5D7E3;
+  --border-strong:   #D5D7E3;
+  --border-sidebar:  #E6E8F0;
 
-  --text-primary:    #0f172a;
+  --text-primary:    #14151F;
   --text-secondary:  #475569;
-  --text-muted:      #64748b;
-  --text-sidebar:    #94a3b8;
-  --text-sidebar-active: #ffffff;
+  --text-muted:      #5F6378;
+  --text-sidebar:    #5F6378;
+  --text-sidebar-active: #4F46E5;
 
-  /* Accent & Brand Colors */
-  --accent:          #6366f1; /* Indigo-500 */
-  --accent-hover:    #4f46e5; /* Indigo-600 */
-  --accent-light:    #e0e7ff; /* Indigo-100 */
-  --accent-dim:      rgba(99, 102, 241, 0.12);
+  /* Status dots */
+  --status-todo:     #94A3B8;
+  --status-progress: #3B82F6;
+  --status-review:   #F59E0B;
+  --status-done:     #10B981;
 
-  /* Status Colors */
-  --status-online:   #10b981; /* Emerald-500 */
-  --status-online-dim: rgba(16, 185, 129, 0.15);
-  --status-offline:  #64748b; /* Slate-500 */
-  --status-offline-dim: rgba(100, 116, 139, 0.15);
-  --status-busy:     #f43f5e; /* Rose-500 */
-  --status-busy-dim: rgba(244, 63, 94, 0.15);
-  --status-away:     #f59e0b; /* Amber-500 */
-  --status-away-dim: rgba(245, 158, 11, 0.15);
-  --status-leave:    #a855f7; /* Purple-500 */
-  --status-leave-dim: rgba(168, 85, 247, 0.15);
+  /* Priority Palette (Light) */
+  --priority-high-bg: #FEE2E2;
+  --priority-high-fg: #B91C1C;
+  --priority-medium-bg: #FEF3C7;
+  --priority-medium-fg: #92400E;
+  --priority-low-bg: #D1FAE5;
+  --priority-low-fg: #047857;
 
-  /* Priority Palette */
-  --priority-low:    #3b82f6; /* Blue-500 */
-  --priority-low-bg: #eff6ff;
-  --priority-medium: #f59e0b; /* Amber-500 */
-  --priority-medium-bg: #fffbeb;
-  --priority-high:   #f97316; /* Orange-500 */
-  --priority-high-bg: #fff7ed;
-  --priority-urgent: #ef4444; /* Red-500 */
-  --priority-urgent-bg: #fef2f2;
-
-  /* Task Workflow Colors */
-  --column-todo:     #64748b;
-  --column-progress: #6366f1;
-  --column-review:   #f59e0b;
-  --column-done:     #10b981;
+  /* Presence dot colors */
+  --presence-online:  #10B981;
+  --presence-busy:    #DC2626;
+  --presence-away:    #F59E0B;
+  --presence-leave:   #8B5CF6;
+  --presence-offline: #9CA3AF;
 
   /* Typography System */
-  --font-family:     'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono:       'JetBrains Mono', monospace;
+  --font-family:     'Geist', system-ui, -apple-system, sans-serif;
+  --letter-spacing-tight: -0.025em;
 
   --text-xs:         0.75rem;     /* 12px */
   --text-sm:         0.8125rem;   /* 13px */
@@ -70,7 +67,7 @@
   --text-2xl:        1.5rem;      /* 24px */
   --text-3xl:        1.875rem;    /* 30px */
 
-  /* Spacing System (4px / 8px scale) */
+  /* Spacing Scale (4px / 8px scale) */
   --space-0-5:       2px;
   --space-1:         4px;
   --space-2:         8px;
@@ -83,71 +80,87 @@
   --space-12:        48px;
 
   /* Radii */
+  --radius-10:       10px;
+  --radius-12:       12px;
+  --radius-14:       14px;
+  --radius-16:       16px;
+  --radius-24:       24px;
+  --radius-full:     9999px;
+
+  /* Compatibility aliases */
   --radius-xs:       4px;
   --radius-sm:       6px;
-  --radius-md:       8px;
+  --radius-md:       10px;
   --radius-lg:       12px;
   --radius-xl:       16px;
   --radius-2xl:      24px;
-  --radius-full:     9999px;
 
   /* Shadows */
-  --shadow-xs:       0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-sm:       0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --shadow-md:       0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --shadow-lg:       0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --shadow-xl:       0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  --shadow-glow:     0 0 20px rgba(99, 102, 241, 0.25);
+  --shadow-card:     0 1px 2px rgba(20, 21, 31, 0.04);
+  --shadow-floating: 0 18px 40px rgba(20, 21, 31, 0.10);
 
-  /* Transitions & Motion */
+  --shadow-xs:       0 1px 2px rgba(20, 21, 31, 0.04);
+  --shadow-sm:       0 1px 3px rgba(20, 21, 31, 0.06);
+  --shadow-md:       0 4px 12px rgba(20, 21, 31, 0.08);
+  --shadow-lg:       0 10px 25px rgba(20, 21, 31, 0.10);
+  --shadow-xl:       0 18px 40px rgba(20, 21, 31, 0.12);
+
+  /* Motion */
   --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow:   300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   200ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Layout dimensions */
-  --sidebar-width:     260px;
-  --sidebar-collapsed: 72px;
+  --sidebar-width:     248px;
+  --sidebar-collapsed: 76px;
   --header-height:     64px;
 }
 
 /* ── Dark Theme Overrides ─────────────────────────────────── */
 [data-theme="dark"] {
-  --bg-app:          #0b0f17;
-  --bg-surface:      #111827;
-  --bg-surface-hover: #1f2937;
-  --bg-surface-active:#374151;
-  --bg-card:         #131c2e;
-  --bg-sidebar:      #0b0f17;
+  --accent:          #5B54F0;
+  --accent-hover:    #4F46E5;
+  --accent-soft:     #24264A;
+  --accent-text:     #A5A3FF;
+  --focus-ring:      #A5A3FF;
+
+  --bg-app:          #0E0F1A;
+  --bg-sidebar:      #12131F;
+  --bg-surface:      #171827;
+  --bg-surface-hover:#1F2136;
+  --bg-surface-active:#2A2D4D;
+  --bg-card:         #14152A;
   --bg-sidebar-hover: rgba(255, 255, 255, 0.06);
-  --bg-sidebar-active: rgba(99, 102, 241, 0.25);
-  --bg-header:       rgba(17, 24, 39, 0.85);
+  --bg-sidebar-active: rgba(91, 84, 240, 0.20);
+  --bg-header:       rgba(23, 24, 39, 0.90);
 
-  --border:          #1f2937;
-  --border-hover:    #374151;
-  --border-strong:   #4b5563;
-  --border-sidebar:  rgba(255, 255, 255, 0.08);
+  --border:          #2A2D4D;
+  --border-hover:    #393D66;
+  --border-strong:   #393D66;
+  --border-sidebar:  #2A2D4D;
 
-  --text-primary:    #f8fafc;
-  --text-secondary:  #94a3b8;
-  --text-muted:      #64748b;
-  --text-sidebar:    #94a3b8;
-  --text-sidebar-active: #ffffff;
+  --text-primary:    #ECEDF7;
+  --text-secondary:  #9EA2BD;
+  --text-muted:      #9EA2BD;
+  --text-sidebar:    #9EA2BD;
+  --text-sidebar-active: #ECEDF7;
 
-  --accent:          #818cf8; /* Indigo-400 */
-  --accent-hover:    #6366f1; /* Indigo-500 */
-  --accent-light:    rgba(99, 102, 241, 0.2);
-  --accent-dim:      rgba(129, 140, 248, 0.15);
+  /* Priority Palette (Dark) */
+  --priority-high-bg: #4A1F2A;
+  --priority-high-fg: #FCA5A5;
+  --priority-medium-bg: #4A3A14;
+  --priority-medium-fg: #FCD34D;
+  --priority-low-bg: #14403A;
+  --priority-low-fg: #6EE7B7;
 
-  --priority-low-bg: rgba(59, 130, 246, 0.15);
-  --priority-medium-bg: rgba(245, 158, 11, 0.15);
-  --priority-high-bg: rgba(249, 115, 22, 0.15);
-  --priority-urgent-bg: rgba(239, 68, 68, 0.15);
+  --shadow-card:     0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-floating: 0 18px 40px rgba(0, 0, 0, 0.45);
 
-  --shadow-xs:       0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm:       0 1px 3px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md:       0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg:       0 10px 25px rgba(0, 0, 0, 0.6);
-  --shadow-xl:       0 20px 40px rgba(0, 0, 0, 0.7);
+  --shadow-xs:       0 1px 2px rgba(0, 0, 0, 0.20);
+  --shadow-sm:       0 1px 3px rgba(0, 0, 0, 0.30);
+  --shadow-md:       0 4px 12px rgba(0, 0, 0, 0.40);
+  --shadow-lg:       0 10px 25px rgba(0, 0, 0, 0.50);
+  --shadow-xl:       0 18px 40px rgba(0, 0, 0, 0.60);
 }
 
 /* Reduced Motion Override */
