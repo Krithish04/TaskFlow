@@ -2,16 +2,16 @@ import React from 'react';
 
 export default function Badge({
   children,
-  variant = 'default', // 'default' | 'accent' | 'success' | 'warning' | 'danger' | 'info' | 'purple'
+  variant = 'default', // 'default' | 'high' | 'medium' | 'low' | 'todo' | 'progress' | 'review' | 'done'
   size = 'md',         // 'sm' | 'md'
   dot = false,
   className = '',
   ...props
 }) {
   return (
-    <span className={`tf-badge tf-badge-${variant} tf-badge-${size} ${className}`} {...props}>
-      {dot && <span className="tf-badge-dot" />}
-      {children}
+    <span className={`tf-chip chip-${variant} chip-${size} ${className}`} {...props}>
+      {dot && <span className="chip-dot" aria-hidden="true" />}
+      <span>{children}</span>
     </span>
   );
 }

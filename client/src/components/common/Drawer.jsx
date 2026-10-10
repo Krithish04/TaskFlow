@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 export default function Drawer({
@@ -7,39 +7,73 @@ export default function Drawer({
   title,
   subtitle,
   children,
-  size = 'md', // 'sm' | 'md' | 'lg' | 'xl'
+  headerActions,
+  size = 'md', // 'sm' | 'md' | 'lg' (max 580px) | 'xl' | 'full'
+  className = '',
 }) {
+  const previousFocusRef = useRef(null);
+  const drawerRef = useRef(null);
+
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
     if (isOpen) {
+      previousFocusRef.current = document.activeElement;
       document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
       window.addEventListener('keydown', handleKeyDown);
+
+      // Focus first focusable element inside drawer
+      setTimeout(() => {
+        if (drawerRef.current) {
+          const focusables = drawerRef.current.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusables.length > 0) focusables[0].focus();
+        }
+      }, 50);
+
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+        if (previousFocusRef.current) {
+          previousFocusRef.current.focus();
+        }
+      };
     }
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div className="drawer-overlay" onClick={onClose}>
+    <div className="drawer-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div
-        className={`drawer-content drawer-${size}`}
+        ref={drawerRef}
+        className={`drawer-content drawer-${size} ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="drawer-header">
-          <div>
-            {title && <h3 className="drawer-title">{title}</h3>}
+          <div className="drawer-title-group">
+            {title && typeof title === 'string' ? <h3 className="drawer-title">{title}</h3> : title}
             {subtitle && <p className="drawer-subtitle">{subtitle}</p>}
           </div>
-          <button className="btn-icon drawer-close" onClick={onClose} aria-label="Close drawer">
-            <X size={18} />
-          </button>
+
+          <div className="drawer-header-actions flex items-center gap-2">
+            {headerActions}
+            <button
+              type="button"
+              className="btn-icon drawer-close"
+              onClick={onClose}
+              aria-label="Close drawer"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
+
         <div className="drawer-body">{children}</div>
       </div>
     </div>
