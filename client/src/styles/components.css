@@ -366,55 +366,111 @@
   text-overflow: ellipsis;
 }
 
-/* ── Centered Auth Page (Screen 1 Redesign) ─────────────────── */
+/* ── Centered Auth Page (Zero Scroll, Spacious, Rounded) ─────────────────── */
 .login-page-centered {
   position: relative;
   width: 100vw;
-  min-height: 100vh;
-  overflow-x: hidden;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .login-centered-container {
   z-index: 10;
   position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.tagline-pill {
-  display: inline-flex;
+.login-logo-header {
+  display: flex;
   align-items: center;
-  padding: 6px 16px;
-  border-radius: var(--radius-full);
-  background-color: var(--accent-soft);
-  color: var(--accent-text);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  border: 1px solid rgba(79, 70, 229, 0.15);
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.login-logo-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .login-card-box {
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-24);
-  padding: 36px;
-  box-shadow: var(--shadow-floating);
-  max-width: 460px;
+  border-radius: 26px;
+  padding: 26px 30px;
+  box-shadow: 0 16px 44px -10px rgba(0, 0, 0, 0.45);
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.login-card-header {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.login-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+}
+
+.login-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
 }
 
 .login-error-banner {
   background-color: var(--priority-high-bg);
   color: var(--priority-high-fg);
-  border-radius: var(--radius-10);
-  padding: 10px 14px;
+  border-radius: 12px;
+  padding: 8px 14px;
   font-size: var(--text-xs);
   font-weight: 500;
+  margin-bottom: 14px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.login-remember-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  padding-top: 1px;
+}
+
+.login-submit-btn {
+  margin-top: 2px;
+  border-radius: 14px !important;
+  height: 42px;
 }
 
 .demo-divider {
   display: flex;
   align-items: center;
   text-align: center;
-  font-size: var(--text-xs);
+  font-size: 11px;
   color: var(--text-muted);
+  margin: 16px 0 12px 0;
 }
 
 .demo-divider::before, .demo-divider::after {
@@ -424,118 +480,147 @@
 }
 
 .demo-divider span {
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-2);
 }
 
-.demo-role-card {
+.demo-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.demo-quick-chip {
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 12px 16px;
-  background-color: var(--bg-app);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-14);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.demo-role-card:hover {
-  border-color: var(--accent);
-  background-color: var(--bg-surface-hover);
-}
-
-.demo-role-card.selected {
-  border-color: var(--accent);
-  background-color: var(--accent-soft);
-}
-
-.demo-icon-square {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-12);
-  display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-}
-
-.demo-chevron {
-  color: var(--text-muted);
-  transition: transform var(--transition-fast);
-}
-
-.demo-role-card:hover .demo-chevron {
-  transform: translateX(2px);
+  gap: 8px;
+  padding: 8px 12px;
+  height: 38px;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
   color: var(--text-primary);
 }
 
-/* ── Floating Decorative Cards (screens >= 1280px only) ────── */
-.login-floating-layer {
-  display: none;
+.demo-quick-chip:hover {
+  border-color: var(--accent);
+  background-color: var(--bg-surface-hover);
+  transform: translateY(-1px);
 }
 
-@media (min-width: 1280px) {
+.demo-quick-chip.selected {
+  border-color: var(--accent);
+  background-color: var(--accent-soft);
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+
+.demo-chip-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Footer Section Below Card ────────────────────────────── */
+.login-footer-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.login-account-toggle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Prevent bright browser autofill on inputs in dark mode */
+.input-control:-webkit-autofill,
+.input-control:-webkit-autofill:hover, 
+.input-control:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-surface) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  caret-color: var(--text-primary) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── Floating Decorative Ambient Cards (Side Floating Cards with Round Borders) ── */
+.login-floating-layer {
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
   .login-floating-layer {
-    display: block;
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
+    display: none;
   }
+}
 
-  .floating-card {
-    position: absolute;
-    background-color: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-16);
-    padding: var(--space-4);
-    box-shadow: var(--shadow-floating);
-    backdrop-filter: blur(8px);
-    pointer-events: auto;
-    animation: floatCard 7s ease-in-out infinite;
-  }
+.floating-card {
+  position: absolute;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 16px 20px;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
+  pointer-events: auto;
+  opacity: 0.92;
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  animation: floatCard 8s ease-in-out infinite;
+}
 
-  /* Left floating cards */
-  .float-card-1 {
-    top: 15%;
-    left: 8%;
-    width: 280px;
-    --rotate-deg: -3deg;
-  }
+.floating-card:hover {
+  opacity: 1;
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 44px -8px rgba(0, 0, 0, 0.45);
+}
 
-  .float-card-2 {
-    top: 45%;
-    left: 6%;
-    width: 240px;
-    --rotate-deg: 2deg;
-    animation-delay: 1.5s;
-  }
+/* Left floating cards */
+.float-card-1 {
+  top: 12%;
+  left: max(24px, calc(50% - 240px - 360px));
+  width: 270px;
+  --rotate-deg: -2deg;
+}
 
-  .float-card-3 {
-    bottom: 18%;
-    left: 8%;
-    padding: 10px 16px;
-    border-radius: var(--radius-full);
-    --rotate-deg: -2deg;
-    animation-delay: 3s;
-  }
+.float-card-2 {
+  top: 45%;
+  left: max(20px, calc(50% - 240px - 380px));
+  width: 250px;
+  --rotate-deg: 2deg;
+  animation-delay: 1.5s;
+}
 
-  /* Right floating cards */
-  .float-card-4 {
-    top: 20%;
-    right: 8%;
-    width: 280px;
-    --rotate-deg: 3deg;
-    animation-delay: 0.8s;
-  }
+.float-card-3 {
+  bottom: 12%;
+  left: max(28px, calc(50% - 240px - 340px));
+  padding: 12px 20px;
+  border-radius: var(--radius-full);
+  --rotate-deg: -1.5deg;
+  animation-delay: 3s;
+}
 
-  .float-card-5 {
-    bottom: 25%;
-    right: 7%;
-    width: 290px;
-    --rotate-deg: -2deg;
-    animation-delay: 2.2s;
-  }
+/* Right floating cards */
+.float-card-4 {
+  top: 15%;
+  right: max(24px, calc(50% - 240px - 360px));
+  width: 280px;
+  --rotate-deg: 2deg;
+  animation-delay: 0.8s;
+}
+
+.float-card-5 {
+  bottom: 18%;
+  right: max(20px, calc(50% - 240px - 370px));
+  width: 280px;
+  --rotate-deg: -2deg;
+  animation-delay: 2.2s;
 }
 
 
@@ -899,7 +984,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  border-radius: var(--radius-12);
+  border-radius: 16px;
   font-weight: 500;
   font-size: var(--text-sm);
   cursor: pointer;
@@ -978,7 +1063,7 @@
 .input-field-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   width: 100%;
 }
 
@@ -1006,11 +1091,11 @@
 
 .input-control, .input {
   width: 100%;
-  height: 44px;
-  padding: 10px 14px;
+  height: 46px;
+  padding: 10px 16px;
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-12);
+  border-radius: 16px;
   color: var(--text-primary);
   font-size: var(--text-sm);
   outline: none;

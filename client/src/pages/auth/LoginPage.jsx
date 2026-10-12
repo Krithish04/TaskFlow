@@ -28,27 +28,30 @@ const DEMOS = [
     email: 'krithish@gmail.com',
     pass: 'krithish123',
     icon: ShieldCheck,
-    desc: 'Manage users, roles and all projects',
+    desc: 'Manage users, roles & projects',
+    tag: 'Full Access',
     iconColor: '#6366F1',
     bgColor: '#EEF0FF',
   },
   {
     roleKey: 'PM',
-    name: 'Project Manager',
+    name: 'Manager',
     email: 'apurva@gmail.com',
     pass: 'apurva123',
     icon: Briefcase,
-    desc: 'Create projects and assign tasks',
+    desc: 'Create projects & assign tasks',
+    tag: 'Projects',
     iconColor: '#10B981',
     bgColor: '#D1FAE5',
   },
   {
     roleKey: 'User',
-    name: 'Team Member',
+    name: 'Member',
     email: 'sandeep@gmail.com',
     pass: 'sandeep123',
     icon: User,
-    desc: 'See your tasks and update progress',
+    desc: 'Execute tasks & track progress',
+    tag: 'Tasks',
     iconColor: '#F59E0B',
     bgColor: '#FEF3C7',
   },
@@ -58,18 +61,18 @@ function LogoIcon() {
   return (
     <div
       style={{
-        width: 44,
-        height: 44,
-        borderRadius: 14,
+        width: 36,
+        height: 36,
+        borderRadius: 10,
         backgroundColor: 'var(--accent)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         color: '#ffffff',
-        boxShadow: '0 6px 20px rgba(79, 70, 229, 0.35)',
+        boxShadow: '0 4px 16px rgba(79, 70, 229, 0.35)',
       }}
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
         <path d="M6 6v12M12 9v9M18 12v6" />
       </svg>
     </div>
@@ -248,37 +251,34 @@ export default function LoginPage() {
       </div>
 
       {/* ── MAIN CENTERED LOGIN COLUMN ────────────────────────────── */}
-      <div className="login-centered-container flex flex-col items-center w-full max-w-md my-auto">
-        {/* Header Logo + Tagline */}
-        <div className="login-logo-header flex flex-col items-center text-center mb-6">
-          <div className="flex items-center gap-3 mb-3">
+      <div className="login-centered-container">
+        {/* Header Logo */}
+        <div className="login-logo-header">
+          <div className="login-logo-brand">
             <LogoIcon />
-            <span className="font-bold text-2xl" style={{ letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
+            <span className="font-bold text-xl" style={{ letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>
               TaskFlow
             </span>
-          </div>
-          <div className="tagline-pill">
-            Project management for agile teams
           </div>
         </div>
 
         {/* Main Form Card */}
-        <div className="login-card-box w-full">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold mb-1">
+        <div className="login-card-box">
+          <div className="login-card-header">
+            <h1 className="login-title">
               {mode === 'login' ? 'Welcome back' : 'Create an account'}
             </h1>
-            <p className="text-sm text-muted">
+            <p className="login-subtitle">
               {mode === 'login'
                 ? 'Sign in to pick up where your team left off.'
                 : 'Get started with your TaskFlow workspace.'}
             </p>
           </div>
 
-          {err && <div className="login-error-banner mb-4">{err}</div>}
+          {err && <div className="login-error-banner">{err}</div>}
 
           {mode === 'login' ? (
-            <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+            <form onSubmit={handleSignIn} className="login-form">
               <Input
                 label="Email"
                 type="email"
@@ -305,7 +305,7 @@ export default function LoginPage() {
                 required
               />
 
-              <div className="flex items-center justify-between text-xs">
+              <div className="login-remember-row">
                 <Checkbox
                   label="Remember me"
                   checked={rememberMe}
@@ -331,13 +331,13 @@ export default function LoginPage() {
                 icon={ArrowRight}
                 iconPosition="right"
                 loading={loading}
-                className="mt-2"
+                className="login-submit-btn"
               >
                 Sign in
               </Button>
             </form>
           ) : (
-            <form onSubmit={handleRegister} className="flex flex-col gap-4">
+            <form onSubmit={handleRegister} className="login-form">
               <Input
                 label="Full Name"
                 placeholder="Alex Rivera"
@@ -373,56 +373,46 @@ export default function LoginPage() {
                 icon={ArrowRight}
                 iconPosition="right"
                 loading={loading}
-                className="mt-2"
+                className="login-submit-btn"
               >
                 Create Account
               </Button>
             </form>
           )}
 
-          {/* Demo Workspace Selector */}
-          <div className="demo-divider my-6">
-            <span>or explore a demo workspace</span>
+          {/* Quick Demo Workspace Selector */}
+          <div className="demo-divider">
+            <span>or quick demo login</span>
           </div>
 
-          <div className="demo-role-list flex flex-col gap-3">
+          <div className="demo-quick-grid">
             {DEMOS.map((demo) => {
               const IconComponent = demo.icon;
               const isSelected = selectedDemo === demo.roleKey;
               return (
-                <div
+                <button
                   key={demo.roleKey}
-                  className={`demo-role-card ${isSelected ? 'selected' : ''}`}
+                  type="button"
+                  className={`demo-quick-chip ${isSelected ? 'selected' : ''}`}
                   onClick={() => handleSelectDemo(demo)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSelectDemo(demo)}
+                  title={demo.desc}
                 >
-                  <div
-                    className="demo-icon-square"
-                    style={{ backgroundColor: demo.bgColor, color: demo.iconColor }}
-                  >
-                    <IconComponent size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-sm text-primary">{demo.name}</h4>
-                    <p className="text-xs text-muted truncate">{demo.desc}</p>
-                  </div>
-                  <ChevronRight size={18} className="demo-chevron" />
-                </div>
+                  <IconComponent size={15} style={{ color: demo.iconColor }} />
+                  <span className="demo-chip-title">{demo.name}</span>
+                </button>
               );
             })}
           </div>
         </div>
 
-        {/* Account toggle & feature highlights below card */}
-        <div className="flex flex-col items-center text-center mt-6 gap-4">
-          <p className="text-sm text-muted">
+        {/* Account toggle */}
+        <div className="login-footer-section">
+          <p className="login-account-toggle">
             {mode === 'login' ? 'New here? ' : 'Already have an account? '}
             <button
               type="button"
               className="font-semibold"
-              style={{ color: 'var(--accent-text)' }}
+              style={{ color: 'var(--accent-text)', marginLeft: '4px' }}
               onClick={() => {
                 setMode(mode === 'login' ? 'register' : 'login');
                 setErr('');
@@ -431,26 +421,6 @@ export default function LoginPage() {
               {mode === 'login' ? 'Create an account' : 'Sign in'}
             </button>
           </p>
-
-          <div className="flex items-center justify-center gap-6 text-xs text-muted flex-wrap">
-            <span className="flex items-center gap-1.5">
-              <Shield size={14} /> Role-based access
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Sun size={14} /> Live presence
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Sparkles size={14} /> AI assistant
-            </span>
-          </div>
-
-          <footer className="flex items-center gap-4 text-xs text-muted mt-2">
-            <a href="#privacy" onClick={(e) => e.preventDefault()}>Privacy</a>
-            <span>•</span>
-            <a href="#terms" onClick={(e) => e.preventDefault()}>Terms</a>
-            <span>•</span>
-            <a href="#help" onClick={(e) => e.preventDefault()}>Help</a>
-          </footer>
         </div>
       </div>
     </div>

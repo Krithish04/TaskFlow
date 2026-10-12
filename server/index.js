@@ -5,7 +5,9 @@ const dotenv = require('dotenv');
 const cron = require('node-cron'); // Import node-cron
 const User = require('./models/User'); // Import User model
 
-dotenv.config();
+const path = require('path');
+
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 
