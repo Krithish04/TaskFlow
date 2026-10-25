@@ -65,4 +65,10 @@
 - Built `TaskComments` component with 5-second polling interval, error handling for background polling, accessible textarea, and immediate optimistic updates, integrated into `TaskDrawer`. Added 14 unit tests in `src/__tests__/comments-api.test.ts` (155 total tests passing) and verified clean passing review with CodeRabbit.
 - Next run needs to know: proceed to Task 14 (User dashboard [assigned tasks, due soon, recent comments]).
 
+## Task 14: User dashboard (assigned tasks, due soon, recent comments)
+- Built comprehensive Team Member dashboard (`src/app/dashboard/user-dashboard.tsx` integrated in `src/app/dashboard/page.tsx`) rendering assigned task overview, overdue alerts, due soon filtering, text search, project memberships, and recent comments feed.
+- Added database queries and unit test suites in `src/__tests__/dashboard.test.ts` and `src/__tests__/user-dashboard.test.ts` (158 total tests passing).
+- Next run needs to know: proceed to Task 15 (`src/lib/ai/provider.ts` [Gemini via Vercel AI SDK, model from `AI_MODEL`], shared error handling for 429, and a per-user rate limiter for `/api/ai/*` [review]).
+
+
 

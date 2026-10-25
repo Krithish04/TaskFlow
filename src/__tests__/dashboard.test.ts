@@ -5,6 +5,8 @@ import * as authModule from "@/auth";
 import * as navigation from "next/navigation";
 import { User } from "@/models/User";
 import { Project } from "@/models/Project";
+import { Task } from "@/models/Task";
+import { Comment } from "@/models/Comment";
 
 vi.mock("@/lib/db", () => ({
   connectDB: vi.fn().mockResolvedValue(true),
@@ -125,13 +127,76 @@ describe("Dashboard Page - Role-Based Routing", () => {
   });
 
   it("renders Team Member dashboard when user role is user", async () => {
+    const mockUserId = new mongoose.Types.ObjectId().toString();
+    const mockProjectId = new mongoose.Types.ObjectId();
+    const mockTaskId = new mongoose.Types.ObjectId();
+
     vi.spyOn(authModule, "auth").mockResolvedValueOnce({
       user: {
-        id: new mongoose.Types.ObjectId().toString(),
+        id: mockUserId,
         name: "Team Member",
         email: "member@example.com",
         role: "user",
       },
+    } as never);
+
+    vi.spyOn(Project, "find").mockReturnValueOnce({
+      populate: vi.fn().mockReturnValueOnce({
+        sort: vi.fn().mockReturnValueOnce({
+          lean: vi.fn().mockResolvedValueOnce([
+            {
+              _id: mockProjectId,
+              name: "User Project",
+              description: "A collaborative project",
+              status: "active",
+              owner: { name: "PM User", email: "pm@example.com" },
+            },
+          ]),
+        }),
+      }),
+    } as never);
+
+    vi.spyOn(Task, "find")
+      .mockReturnValueOnce({
+        populate: vi.fn().mockReturnValueOnce({
+          sort: vi.fn().mockReturnValueOnce({
+            lean: vi.fn().mockResolvedValueOnce([
+              {
+                _id: mockTaskId,
+                project: { _id: mockProjectId, name: "User Project" },
+                title: "Assigned Task 1",
+                description: "Do the task",
+                status: "in_progress",
+                priority: "high",
+                dueDate: new Date(Date.now() + 86400000).toISOString(),
+                createdAt: new Date().toISOString(),
+              },
+            ]),
+          }),
+        }),
+      } as never)
+      .mockReturnValueOnce({
+        lean: vi.fn().mockResolvedValueOnce([{ _id: mockTaskId }]),
+      } as never);
+
+    vi.spyOn(Comment, "find").mockReturnValueOnce({
+      populate: vi.fn().mockReturnValueOnce({
+        populate: vi.fn().mockReturnValueOnce({
+          sort: vi.fn().mockReturnValueOnce({
+            limit: vi.fn().mockReturnValueOnce({
+              lean: vi.fn().mockResolvedValueOnce([
+                {
+                  _id: new mongoose.Types.ObjectId(),
+                  task: { _id: mockTaskId, title: "Assigned Task 1", project: { name: "User Project" } },
+                  author: { name: "PM User", role: "pm" },
+                  body: "Great progress on this!",
+                  createdAt: new Date().toISOString(),
+                },
+              ]),
+            }),
+          }),
+        }),
+      }),
     } as never);
 
     const rendered = await DashboardPage();

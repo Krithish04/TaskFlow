@@ -3,12 +3,20 @@ import { auth, signOut } from "@/auth";
 import { connectDB } from "@/lib/db";
 import { User, type UserRole } from "@/models/User";
 import { Project } from "@/models/Project";
+import { Task } from "@/models/Task";
+import { Comment } from "@/models/Comment";
 import { UserTable, type DashboardUser } from "./user-table";
 import {
   PMProjects,
   type DashboardProject,
   type AvailableMember,
 } from "./pm-projects";
+import {
+  UserDashboard,
+  type UserTask,
+  type UserComment,
+  type UserProjectItem,
+} from "./user-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +27,6 @@ import {
   LogOut,
   Folder,
   Layers,
-  Sparkles,
 } from "lucide-react";
 
 export interface SerializedProject {
@@ -383,48 +390,133 @@ export default async function DashboardPage() {
   }
 
   // ---------------------------------------------------------------------------
-  // Team Member Dashboard View (Task 14 completes User dashboard)
+  // Team Member Dashboard View (Task 14)
   // ---------------------------------------------------------------------------
+  await connectDB();
+
+  const userProjectsDoc = await Project.find({
+    $or: [{ owner: session.user.id }, { members: session.user.id }],
+  })
+    .populate("owner", "name email")
+    .sort({ name: 1 })
+    .lean();
+
+  const userProjects: UserProjectItem[] = userProjectsDoc.map((p) => {
+    const ownerObj = p.owner as unknown as { name?: string } | null;
+    return {
+      id: p._id.toString(),
+      name: p.name,
+      description: p.description || "",
+      status: p.status,
+      ownerName: ownerObj?.name || "Unassigned",
+    };
+  });
+
+  const projectIds = userProjectsDoc.map((p) => p._id);
+
+  const assignedTasksDoc = await Task.find({ assignee: session.user.id })
+    .populate("project", "name")
+    .sort({ dueDate: 1, createdAt: -1 })
+    .lean();
+
+  const assignedTasks: UserTask[] = assignedTasksDoc.map((t) => {
+    const projectObj = t.project as unknown as { _id?: unknown; name?: string } | null;
+    return {
+      id: t._id.toString(),
+      projectId: projectObj?._id?.toString() || (t.project ? t.project.toString() : ""),
+      projectName: projectObj?.name || "Project",
+      title: t.title,
+      description: t.description || "",
+      status: t.status,
+      priority: t.priority,
+      dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : null,
+      createdAt: t.createdAt ? new Date(t.createdAt).toISOString() : new Date().toISOString(),
+    };
+  });
+
+  // Recent comments on user's assigned tasks or member projects
+  const relevantTasks = await Task.find(
+    { $or: [{ assignee: session.user.id }, { project: { $in: projectIds } }] },
+    "_id"
+  ).lean();
+  const relevantTaskIds = relevantTasks.map((t) => t._id);
+
+  const recentCommentsDoc = await Comment.find({ task: { $in: relevantTaskIds } })
+    .populate("author", "name email role")
+    .populate({
+      path: "task",
+      select: "title project",
+      populate: { path: "project", select: "name" },
+    })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .lean();
+
+  const recentComments: UserComment[] = recentCommentsDoc.map((c) => {
+    const authorObj = c.author as unknown as { name?: string; role?: string } | null;
+    const taskObj = c.task as unknown as {
+      _id?: unknown;
+      title?: string;
+      project?: { _id?: unknown; name?: string };
+    } | null;
+
+    return {
+      id: c._id.toString(),
+      taskId: taskObj?._id?.toString() || (c.task ? c.task.toString() : ""),
+      taskTitle: taskObj?.title || "Task",
+      projectId:
+        taskObj?.project?._id?.toString() ||
+        (taskObj?.project ? taskObj.project.toString() : ""),
+      projectName: taskObj?.project?.name || "Project",
+      authorName: authorObj?.name || "Team Member",
+      authorRole: authorObj?.role || "user",
+      body: c.body,
+      createdAt: c.createdAt ? new Date(c.createdAt).toISOString() : new Date().toISOString(),
+    };
+  });
+
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <Card className="shadow-sm">
-        <CardHeader className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <Users className="size-3.5" />
+    <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
+      {/* Top Header Banner for Team Member */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-border bg-card p-6 shadow-xs">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <Users className="size-3" />
               Team Member
             </span>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <Button variant="ghost" size="sm" type="submit" className="gap-1.5 text-xs">
-                <LogOut className="size-3.5" />
-                Sign Out
-              </Button>
-            </form>
+            <span className="text-xs text-muted-foreground">
+              Signed in as {session.user.name || session.user.email}
+            </span>
           </div>
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            Team Member Dashboard
-          </CardTitle>
-          <CardDescription>
-            Signed in as {session.user.name || session.user.email}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground flex items-start gap-3">
-            <Sparkles className="size-5 text-primary shrink-0 mt-0.5" />
-            <div>
-              <p className="font-medium text-foreground">Next Up: Assigned Tasks & Recent Comments (Task 14)</p>
-              <p className="mt-1 text-xs">
-                Your personal task overview, due-soon alerts, and comment threads will be connected in Task 14.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            My Workspace & Tasks
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Track your assigned work, stay ahead of upcoming deadlines, and follow discussion updates.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <Button variant="outline" size="sm" type="submit" className="gap-1.5 text-xs">
+              <LogOut className="size-3.5" />
+              Sign Out
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      {/* User Dashboard Component */}
+      <UserDashboard
+        assignedTasks={assignedTasks}
+        recentComments={recentComments}
+        userProjects={userProjects}
+      />
     </div>
   );
 }

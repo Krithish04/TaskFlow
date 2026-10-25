@@ -20,7 +20,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 11. Kanban board page with dnd-kit: four columns, drag between and within columns, persists `status` and `order`.
 - [x] 12. Task drawer: edit fields (PM/Admin), view details.
 - [x] 13. [review] Comments API and comment thread in the drawer, polling every 5 s.
-- [ ] 14. User dashboard (assigned tasks, due soon, recent comments).
+- [x] 14. User dashboard (assigned tasks, due soon, recent comments).
 
 ## AI
 - [ ] 15. [review] `src/lib/ai/provider.ts` (Gemini via Vercel AI SDK, model from `AI_MODEL`), shared error handling for 429, and a per-user rate limiter for `/api/ai/*`.
