@@ -39,3 +39,8 @@
 - Implemented admin-only Users API (`GET /api/users`, `PATCH /api/users`, and `GET/PATCH /api/users/[id]`) with Zod validation, ObjectId verification, and guard against removing the last administrator.
 - Built Admin dashboard (`/dashboard`) with user metrics, all projects overview, and an interactive `UserTable` with search, role filtering, and dynamic role changes; addressed CodeRabbit review feedback (open redirect sanitization and last admin protection). Added unit tests in `src/__tests__/users-api.test.ts` and `src/__tests__/dashboard.test.ts`.
 - Next run needs to know: proceed to Task 9 (Projects API with Zod validation and permission checks, plus the PM dashboard project list [review]).
+
+## Task 9: Projects API and PM dashboard project list [review]
+- Implemented Projects API (`GET /api/projects`, `POST /api/projects`, and `GET/PATCH/DELETE /api/projects/[id]`) with Zod schema validation, ObjectId checks, cascading task/comment cleanup on deletion, and server-side permission checks matching the PRD matrix.
+- Built PM dashboard project list (`src/app/dashboard/pm-projects.tsx`) featuring project metrics, search/status filter, interactive project creation & editing dialogs, and links to Kanban boards. Hardened `sanitizeCallbackUrl` against control characters and backslashes following CodeRabbit review. Added 16 tests in `src/__tests__/projects-api.test.ts` (117 total tests passing).
+- Next run needs to know: proceed to Task 10 (Tasks API [list, create, edit, delete, move] with permission checks and tests [review]).

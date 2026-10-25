@@ -78,13 +78,46 @@ describe("Dashboard Page - Role-Based Routing", () => {
   });
 
   it("renders PM dashboard when user role is pm", async () => {
+    const mockPmId = new mongoose.Types.ObjectId().toString();
     vi.spyOn(authModule, "auth").mockResolvedValueOnce({
       user: {
-        id: new mongoose.Types.ObjectId().toString(),
+        id: mockPmId,
         name: "PM User",
         email: "pm@example.com",
         role: "pm",
       },
+    } as never);
+
+    vi.spyOn(Project, "find").mockReturnValueOnce({
+      populate: vi.fn().mockReturnValueOnce({
+        populate: vi.fn().mockReturnValueOnce({
+          sort: vi.fn().mockReturnValueOnce({
+            lean: vi.fn().mockResolvedValueOnce([
+              {
+                _id: new mongoose.Types.ObjectId(),
+                name: "PM Owned Project",
+                status: "active",
+                owner: { _id: mockPmId, name: "PM User", email: "pm@example.com" },
+                members: [],
+                createdAt: new Date(),
+              },
+            ]),
+          }),
+        }),
+      }),
+    } as never);
+
+    vi.spyOn(User, "find").mockReturnValueOnce({
+      sort: vi.fn().mockReturnValueOnce({
+        lean: vi.fn().mockResolvedValueOnce([
+          {
+            _id: new mongoose.Types.ObjectId(),
+            name: "Member 1",
+            email: "m1@example.com",
+            role: "user",
+          },
+        ]),
+      }),
     } as never);
 
     const rendered = await DashboardPage();

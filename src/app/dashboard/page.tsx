@@ -4,6 +4,11 @@ import { connectDB } from "@/lib/db";
 import { User, type UserRole } from "@/models/User";
 import { Project } from "@/models/Project";
 import { UserTable, type DashboardUser } from "./user-table";
+import {
+  PMProjects,
+  type DashboardProject,
+  type AvailableMember,
+} from "./pm-projects";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -281,49 +286,98 @@ export default async function DashboardPage() {
   }
 
   // ---------------------------------------------------------------------------
-  // Project Manager Dashboard View (Task 9 completes PM features)
+  // Project Manager Dashboard View (Task 9)
   // ---------------------------------------------------------------------------
   if (role === "pm") {
+    await connectDB();
+
+    const pmProjectsDoc = await Project.find({
+      $or: [{ owner: session.user.id }, { members: session.user.id }],
+    })
+      .populate("owner", "name email role")
+      .populate("members", "name email role")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const usersDoc = await User.find({}, "name email role")
+      .sort({ name: 1 })
+      .lean();
+
+    const pmProjects: DashboardProject[] = pmProjectsDoc.map((p) => {
+      const ownerObj = p.owner as unknown as { _id?: unknown; name?: string; email?: string } | null;
+      const membersArr = Array.isArray(p.members)
+        ? (p.members as unknown as { _id?: unknown; id?: string; name?: string; email?: string; role?: string }[])
+        : [];
+
+      return {
+        id: p._id.toString(),
+        name: p.name,
+        description: p.description || "",
+        status: p.status,
+        owner: {
+          id: ownerObj?._id?.toString() || "",
+          name: ownerObj?.name || "Unassigned",
+          email: ownerObj?.email || "",
+        },
+        members: membersArr.map((m) => ({
+          id: m._id?.toString() || m.id || "",
+          name: m.name || "",
+          email: m.email || "",
+          role: m.role || "user",
+        })),
+        createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : new Date().toISOString(),
+      };
+    });
+
+    const availableUsers: AvailableMember[] = usersDoc.map((u) => ({
+      id: u._id.toString(),
+      name: u.name,
+      email: u.email,
+      role: u.role,
+    }));
+
     return (
-      <div className="container mx-auto max-w-5xl px-4 py-12 sm:px-6">
-        <Card className="shadow-sm">
-          <CardHeader className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                <Briefcase className="size-3.5" />
+      <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
+        {/* Top Header Banner for PM */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-border bg-card p-6 shadow-xs">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                <Briefcase className="size-3" />
                 Project Manager
               </span>
-              <form
-                action={async () => {
-                  "use server";
-                  await signOut({ redirectTo: "/login" });
-                }}
-              >
-                <Button variant="ghost" size="sm" type="submit" className="gap-1.5 text-xs">
-                  <LogOut className="size-3.5" />
-                  Sign Out
-                </Button>
-              </form>
+              <span className="text-xs text-muted-foreground">
+                Signed in as {session.user.name || session.user.email}
+              </span>
             </div>
-            <CardTitle className="text-2xl font-bold tracking-tight">
-              Project Manager Dashboard
-            </CardTitle>
-            <CardDescription>
-              Signed in as {session.user.name || session.user.email}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground flex items-start gap-3">
-              <Sparkles className="size-5 text-primary shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-foreground">Next Up: Projects API & PM Dashboard (Task 9)</p>
-                <p className="mt-1 text-xs">
-                  Project creation, member assignment, overdue task indicators, and workload distributions are being activated in Task 9.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+              Project Management Hub
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Lead your project teams, configure project workspaces, and track progress across boards.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
+            >
+              <Button variant="outline" size="sm" type="submit" className="gap-1.5 text-xs">
+                <LogOut className="size-3.5" />
+                Sign Out
+              </Button>
+            </form>
+          </div>
+        </div>
+
+        {/* PM Projects Section */}
+        <PMProjects
+          initialProjects={pmProjects}
+          currentUserId={session.user.id}
+          availableUsers={availableUsers}
+        />
       </div>
     );
   }

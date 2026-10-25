@@ -22,6 +22,8 @@ describe("sanitizeCallbackUrl", () => {
     expect(sanitizeCallbackUrl("https://evil.com")).toBe("/dashboard");
     expect(sanitizeCallbackUrl("//evil.com")).toBe("/dashboard");
     expect(sanitizeCallbackUrl("/\\evil.com")).toBe("/dashboard");
+    expect(sanitizeCallbackUrl("/\t/evil.com")).toBe("/dashboard");
+    expect(sanitizeCallbackUrl("/\n/evil.com")).toBe("/dashboard");
     expect(sanitizeCallbackUrl(null)).toBe("/dashboard");
     expect(sanitizeCallbackUrl(123)).toBe("/dashboard");
   });
