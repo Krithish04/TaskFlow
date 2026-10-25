@@ -49,3 +49,8 @@
 - Implemented full Tasks API: `GET/POST /api/projects/[id]/tasks`, `GET/PATCH/DELETE /api/tasks/[id]`, and `POST /api/tasks/[id]/move` with Zod validation, ObjectId verification, auto-calculated column order, and cascading comment cleanup.
 - Enforced PRD permission matrix: only Admin/owner PM can create, edit, or delete tasks; members can view; assigned users can move their own tasks. Extracted `sanitizeCallbackUrl` to `src/lib/callback-url.ts` per CodeRabbit review. Added 16 unit tests in `src/__tests__/tasks-api.test.ts` (133 total tests passing).
 - Next run needs to know: proceed to Task 11 (Kanban board page with dnd-kit: four columns, drag between and within columns, persists status and order).
+
+## Task 11: Kanban board page with dnd-kit
+- Installed `@dnd-kit/core`, `@dnd-kit/sortable`, and `@dnd-kit/utilities` and created responsive Kanban board page (`src/app/projects/[id]/page.tsx`, `kanban-board.tsx`, `kanban-column.tsx`, `kanban-card.tsx`).
+- Implemented four columns (To Do, In Progress, Review, Done) with smooth drag-and-drop between and within columns, optimistic UI updates, drag overlay, rollback on permission failure, and automatic persistence of `status` and `order` via `POST /api/tasks/[id]/move`. Added unit tests in `src/__tests__/kanban.test.ts` (137 total tests passing).
+- Next run needs to know: proceed to Task 12 (Task drawer: edit fields [PM/Admin], view details).
