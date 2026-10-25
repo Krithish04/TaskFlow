@@ -44,3 +44,8 @@
 - Implemented Projects API (`GET /api/projects`, `POST /api/projects`, and `GET/PATCH/DELETE /api/projects/[id]`) with Zod schema validation, ObjectId checks, cascading task/comment cleanup on deletion, and server-side permission checks matching the PRD matrix.
 - Built PM dashboard project list (`src/app/dashboard/pm-projects.tsx`) featuring project metrics, search/status filter, interactive project creation & editing dialogs, and links to Kanban boards. Hardened `sanitizeCallbackUrl` against control characters and backslashes following CodeRabbit review. Added 16 tests in `src/__tests__/projects-api.test.ts` (117 total tests passing).
 - Next run needs to know: proceed to Task 10 (Tasks API [list, create, edit, delete, move] with permission checks and tests [review]).
+
+## Task 10: Tasks API with permission checks and tests [review]
+- Implemented full Tasks API: `GET/POST /api/projects/[id]/tasks`, `GET/PATCH/DELETE /api/tasks/[id]`, and `POST /api/tasks/[id]/move` with Zod validation, ObjectId verification, auto-calculated column order, and cascading comment cleanup.
+- Enforced PRD permission matrix: only Admin/owner PM can create, edit, or delete tasks; members can view; assigned users can move their own tasks. Extracted `sanitizeCallbackUrl` to `src/lib/callback-url.ts` per CodeRabbit review. Added 16 unit tests in `src/__tests__/tasks-api.test.ts` (133 total tests passing).
+- Next run needs to know: proceed to Task 11 (Kanban board page with dnd-kit: four columns, drag between and within columns, persists status and order).

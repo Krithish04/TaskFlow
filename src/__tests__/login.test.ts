@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { loginAction, sanitizeCallbackUrl } from "@/app/login/actions";
+import { loginAction } from "@/app/login/actions";
+import { sanitizeCallbackUrl } from "@/lib/callback-url";
 import LoginPage from "@/app/login/page";
 import * as authModule from "@/auth";
 import { AuthError } from "next-auth";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LoginForm } from "./login-form";
-import { sanitizeCallbackUrl } from "./actions";
+import { sanitizeCallbackUrl } from "@/lib/callback-url";
 
 export const metadata: Metadata = {
   title: "Sign In - TaskFlow",

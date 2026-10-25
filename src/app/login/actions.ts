@@ -3,24 +3,10 @@
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { sanitizeCallbackUrl } from "@/lib/callback-url";
 
 export interface LoginState {
   error?: string;
-}
-
-export function sanitizeCallbackUrl(rawUrl: unknown): string {
-  if (typeof rawUrl !== "string" || !rawUrl.startsWith("/")) {
-    return "/dashboard";
-  }
-  if (rawUrl.startsWith("//") || /[\u0000-\u001f\u007f\\]/.test(rawUrl)) {
-    return "/dashboard";
-  }
-  try {
-    const base = "http://localhost";
-    return new URL(rawUrl, base).origin === base ? rawUrl : "/dashboard";
-  } catch {
-    return "/dashboard";
-  }
 }
 
 export async function loginAction(
