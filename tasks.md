@@ -31,5 +31,5 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 20. [review] `POST /api/ai/assistant`: streaming chat panel answering from the project's real task data, read-only.
 
 ## Finish
-- [ ] 21. README with setup, env vars, seed, and deployment notes (Vercel + MongoDB Atlas).
+- [x] 21. README with setup, env vars, seed, and deployment notes (Vercel + MongoDB Atlas).
 - [ ] 22. Final pass: run lint, typecheck, tests, and `coderabbit review --plain` on the whole branch; fix real issues; ensure no secrets are committed.

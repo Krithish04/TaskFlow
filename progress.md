@@ -102,3 +102,9 @@
 - Fed real-time project task data (status counts, overdue tasks, team workload distribution, and task inventory) into a strict read-only system prompt using Vercel AI SDK `streamText` and plain text streaming.
 - Built interactive `AIAssistantPanel` slide-over drawer on `/projects/[id]` with real-time stream chunk decoding, markdown formatting, quick suggestion prompts, clear chat, and abort controls, integrated into `KanbanBoard` header for all project members. Added 16 unit tests across `ai-assistant.test.ts` and `ai-assistant-panel.test.ts` (242 total tests passing). Completed 2 CodeRabbit review passes and addressed all findings.
 - Next run needs to know: proceed to Task 21 (README with setup, env vars, seed, and deployment notes [Vercel + MongoDB Atlas]).
+
+## Task 21: Comprehensive README and deployment documentation
+- Authored a comprehensive `README.md` covering full project overview, role-based capabilities matrix, tech stack, architecture features, and detailed local setup instructions.
+- Documented all environment variables (`MONGODB_URI`, `AUTH_SECRET`, `GOOGLE_GENERATIVE_AI_API_KEY`, `AI_MODEL`), demo credentials for all three roles with one-click login notes, and safety restrictions of `npm run seed`.
+- Provided detailed production deployment procedures for MongoDB Atlas (cluster provisioning, network access `0.0.0.0/0`, and connection string configuration) and Vercel (environment variables, build settings, and edge routing).
+- Next run needs to know: proceed to Task 22 (Final pass: run lint, typecheck, tests, and `coderabbit review` on the whole branch; fix real issues; ensure no secrets are committed).
