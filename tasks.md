@@ -9,7 +9,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 4. `scripts/seed.ts` and `npm run seed`: 1 admin, 1 PM, 2 users, 1 demo project with 8 tasks. Refuse to run in production.
 
 ## Auth and roles
-- [ ] 5. [review] Auth.js credentials login with bcrypt; session includes `id` and `role`.
+- [x] 5. [review] Auth.js credentials login with bcrypt; session includes `id` and `role`.
 - [ ] 6. [review] `requireRole()` and `requireProjectAccess()` server helpers plus middleware protecting `/dashboard` and `/projects`. Unit tests for the permission matrix in PRD.md.
 - [ ] 7. Login page.
 
