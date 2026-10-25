@@ -54,3 +54,9 @@
 - Installed `@dnd-kit/core`, `@dnd-kit/sortable`, and `@dnd-kit/utilities` and created responsive Kanban board page (`src/app/projects/[id]/page.tsx`, `kanban-board.tsx`, `kanban-column.tsx`, `kanban-card.tsx`).
 - Implemented four columns (To Do, In Progress, Review, Done) with smooth drag-and-drop between and within columns, optimistic UI updates, drag overlay, rollback on permission failure, and automatic persistence of `status` and `order` via `POST /api/tasks/[id]/move`. Added unit tests in `src/__tests__/kanban.test.ts` (137 total tests passing).
 - Next run needs to know: proceed to Task 12 (Task drawer: edit fields [PM/Admin], view details).
+
+## Task 12: Task drawer: edit fields (PM/Admin), view details
+- Built interactive Task drawer (`src/app/projects/[id]/task-drawer.tsx`) integrated with `KanbanBoard`, `KanbanColumn`, and `KanbanCard` upon card click.
+- Implemented read-only task metadata and details view for members and full editing capabilities (title, description, status, priority, assignee, due date) plus task deletion for project owners and Admins via `PATCH/DELETE /api/tasks/[id]`. Added unit tests in `src/__tests__/task-drawer.test.ts` (141 total tests passing).
+- Next run needs to know: proceed to Task 13 (Comments API and comment thread in the drawer, polling every 5 s [review]).
+

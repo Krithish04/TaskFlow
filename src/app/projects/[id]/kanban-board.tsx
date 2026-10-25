@@ -17,6 +17,7 @@ import { TaskStatus, TaskPriority } from "@/models/Task";
 import { KanbanProject, KanbanTask, KanbanUser, COLUMNS } from "./types";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
+import { TaskDrawer } from "./task-drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,12 +49,30 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const [tasks, setTasks] = React.useState<KanbanTask[]>(initialTasks);
   const [activeTask, setActiveTask] = React.useState<KanbanTask | null>(null);
+  const [selectedTask, setSelectedTask] = React.useState<KanbanTask | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [assigneeFilter, setAssigneeFilter] = React.useState<string>("all");
   const [priorityFilter, setPriorityFilter] = React.useState<string>("all");
   const [isCreatingTask, setIsCreatingTask] = React.useState(false);
   const [isSubmittingTask, setIsSubmittingTask] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+  const handleSelectTask = (task: KanbanTask) => {
+    setSelectedTask(task);
+    setIsDrawerOpen(true);
+  };
+
+  const handleTaskUpdated = (updated: KanbanTask) => {
+    setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+    setSelectedTask(updated);
+  };
+
+  const handleTaskDeleted = (deletedId: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== deletedId));
+    setIsDrawerOpen(false);
+    setSelectedTask(null);
+  };
 
   // New task form state
   const [newTaskData, setNewTaskData] = React.useState<{
@@ -620,6 +639,7 @@ export function KanbanBoard({
               badgeClass={col.badgeClass}
               tasks={columnsTasks[col.id] || []}
               currentUserId={currentUserId}
+              onTaskClick={handleSelectTask}
             />
           ))}
         </div>
@@ -635,6 +655,17 @@ export function KanbanBoard({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Task Drawer for details view and editing */}
+      <TaskDrawer
+        task={selectedTask}
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        isOwnerOrAdmin={isOwnerOrAdmin}
+        availableMembers={availableMembers}
+        onTaskUpdated={handleTaskUpdated}
+        onTaskDeleted={handleTaskDeleted}
+      />
     </div>
   );
 }

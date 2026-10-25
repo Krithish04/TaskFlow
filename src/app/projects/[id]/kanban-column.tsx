@@ -17,6 +17,7 @@ interface KanbanColumnProps {
   badgeClass: string;
   tasks: KanbanTask[];
   currentUserId: string;
+  onTaskClick?: (task: KanbanTask) => void;
 }
 
 export function KanbanColumn({
@@ -26,6 +27,7 @@ export function KanbanColumn({
   badgeClass,
   tasks,
   currentUserId,
+  onTaskClick,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -60,6 +62,7 @@ export function KanbanColumn({
               key={task.id}
               task={task}
               currentUserId={currentUserId}
+              onClick={onTaskClick}
             />
           ))}
         </SortableContext>

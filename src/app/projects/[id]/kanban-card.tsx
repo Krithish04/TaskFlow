@@ -10,6 +10,7 @@ interface KanbanCardProps {
   task: KanbanTask;
   currentUserId: string;
   isOverlay?: boolean;
+  onClick?: (task: KanbanTask) => void;
 }
 
 const PRIORITY_CONFIG = {
@@ -27,7 +28,12 @@ const PRIORITY_CONFIG = {
   },
 };
 
-export function KanbanCard({ task, currentUserId, isOverlay }: KanbanCardProps) {
+export function KanbanCard({
+  task,
+  currentUserId,
+  isOverlay,
+  onClick,
+}: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -55,6 +61,7 @@ export function KanbanCard({ task, currentUserId, isOverlay }: KanbanCardProps) 
       style={style}
       {...attributes}
       {...listeners}
+      onClick={() => onClick?.(task)}
       className={`group relative rounded-lg border border-border bg-card p-3.5 shadow-xs transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing select-none ${
         isOverlay ? "shadow-xl ring-2 ring-primary/40 rotate-1 cursor-grabbing bg-card" : ""
       }`}
