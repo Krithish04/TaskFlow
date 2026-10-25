@@ -76,6 +76,8 @@
 - Added 18 unit tests in `src/__tests__/ai-provider.test.ts` (176 total tests passing) and completed CodeRabbit review pass with zero findings.
 - Next run needs to know: proceed to Task 16 (`POST /api/ai/breakdown` with structured output [Zod schema] and a button on the project page [review]).
 
-
-
-
+## Task 16: AI task breakdown with structured output and project dialog [review]
+- Implemented `POST /api/ai/breakdown` with Zod validation, bounded stream body parsing (16KB cap), project edit access check, rate limiting, and structured output via Vercel AI SDK `generateObject`.
+- Built interactive `AIBreakdownDialog` on `/projects/[id]` allowing PMs and Admins to input guidance, generate subtasks with priority and hourly estimates, review/select tasks, and batch-save them to the Kanban board.
+- Addressed CodeRabbit review feedback (bounded body stream DoS guard, estimate preservation, dialog ARIA attributes, incremental task saving, checkbox event propagation); added 12 unit tests across `ai-breakdown.test.ts` and `ai-breakdown-dialog.test.ts` (188 total tests passing).
+- Next run needs to know: proceed to Task 17 (`POST /api/ai/create-task`: returns a draft task, UI shows it for confirmation before saving [review]).

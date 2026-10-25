@@ -18,6 +18,7 @@ import { KanbanProject, KanbanTask, KanbanUser, COLUMNS } from "./types";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { TaskDrawer } from "./task-drawer";
+import { AIBreakdownDialog } from "./ai-breakdown-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ import {
   AlertCircle,
   Loader2,
   X,
+  Sparkles,
 } from "lucide-react";
 
 interface KanbanBoardProps {
@@ -56,7 +58,12 @@ export function KanbanBoard({
   const [priorityFilter, setPriorityFilter] = React.useState<string>("all");
   const [isCreatingTask, setIsCreatingTask] = React.useState(false);
   const [isSubmittingTask, setIsSubmittingTask] = React.useState(false);
+  const [isBreakdownOpen, setIsBreakdownOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+
+  const handleAITasksCreated = (newTasks: KanbanTask[]) => {
+    setTasks((prev) => [...prev, ...newTasks]);
+  };
 
   const handleSelectTask = (task: KanbanTask) => {
     setSelectedTask(task);
@@ -379,13 +386,23 @@ export function KanbanBoard({
           </div>
 
           {isOwnerOrAdmin && (
-            <Button
-              onClick={() => setIsCreatingTask(true)}
-              className="gap-1.5 font-medium shrink-0 self-start sm:self-auto"
-            >
-              <Plus className="size-4" />
-              Add Task
-            </Button>
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+              <Button
+                variant="outline"
+                onClick={() => setIsBreakdownOpen(true)}
+                className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
+              >
+                <Sparkles className="size-3.5 text-primary" />
+                AI Breakdown
+              </Button>
+              <Button
+                onClick={() => setIsCreatingTask(true)}
+                className="gap-1.5 font-medium text-xs h-9"
+              >
+                <Plus className="size-3.5" />
+                Add Task
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -665,6 +682,15 @@ export function KanbanBoard({
         availableMembers={availableMembers}
         onTaskUpdated={handleTaskUpdated}
         onTaskDeleted={handleTaskDeleted}
+      />
+
+      {/* AI Task Breakdown Dialog */}
+      <AIBreakdownDialog
+        projectId={project.id}
+        projectName={project.name}
+        isOpen={isBreakdownOpen}
+        onClose={() => setIsBreakdownOpen(false)}
+        onTasksCreated={handleAITasksCreated}
       />
     </div>
   );
