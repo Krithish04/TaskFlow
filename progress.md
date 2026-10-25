@@ -26,3 +26,8 @@
 - Integrated Auth.js (v5) with credentials provider, Zod validation, and bcrypt password verification; session and JWT callbacks attach `id` and `role`.
 - Added App Router route handler `src/app/api/auth/[...nextauth]/route.ts`, TypeScript session augmentation (`src/types/next-auth.d.ts`), and unit tests (`src/__tests__/auth.test.ts`). Ran CodeRabbit review with 0 findings.
 - Next run needs to know: proceed to Task 6 (`requireRole()` and `requireProjectAccess()` server helpers plus middleware protecting `/dashboard` and `/projects`, and unit tests for the permission matrix in PRD.md [review]).
+
+## Task 6: Role helpers, project access helpers, and route protection [review]
+- Implemented `requireRole()` and `requireProjectAccess()` server enforcement helpers along with full PRD permission matrix checkers in `src/lib/permissions.ts`.
+- Configured route protection via Next.js 16 proxy/middleware in `src/proxy.ts` redirecting unauthenticated visits on `/dashboard` and `/projects` to `/login?callbackUrl=...`; validated with unit test suites in `src/__tests__/permissions.test.ts` and `src/__tests__/proxy.test.ts`. Ran CodeRabbit review and addressed malformed ObjectId validation.
+- Next run needs to know: proceed to Task 7 (Login page).

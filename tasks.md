@@ -10,7 +10,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 
 ## Auth and roles
 - [x] 5. [review] Auth.js credentials login with bcrypt; session includes `id` and `role`.
-- [ ] 6. [review] `requireRole()` and `requireProjectAccess()` server helpers plus middleware protecting `/dashboard` and `/projects`. Unit tests for the permission matrix in PRD.md.
+- [x] 6. [review] `requireRole()` and `requireProjectAccess()` server helpers plus middleware protecting `/dashboard` and `/projects`. Unit tests for the permission matrix in PRD.md.
 - [ ] 7. Login page.
 
 ## Core features
