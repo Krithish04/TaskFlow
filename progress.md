@@ -31,3 +31,9 @@
 - Implemented `requireRole()` and `requireProjectAccess()` server enforcement helpers along with full PRD permission matrix checkers in `src/lib/permissions.ts`.
 - Configured route protection via Next.js 16 proxy/middleware in `src/proxy.ts` redirecting unauthenticated visits on `/dashboard` and `/projects` to `/login?callbackUrl=...`; validated with unit test suites in `src/__tests__/permissions.test.ts` and `src/__tests__/proxy.test.ts`. Ran CodeRabbit review and addressed malformed ObjectId validation.
 - Next run needs to know: proceed to Task 7 (Login page).
+
+## Task 7: Login page
+- Built responsive login page (`src/app/login/page.tsx`) with automatic redirect to `/dashboard` for authenticated users and `callbackUrl` support.
+- Implemented `loginAction` server action (`src/app/login/actions.ts`) with credentials verification and error mapping, along with `LoginForm` (`src/app/login/login-form.tsx`) featuring demo account autofill buttons for Admin, PM, and User roles; added unit tests in `src/__tests__/login.test.ts`.
+- Next run needs to know: proceed to Task 8 (Users API [admin only] and Admin dashboard [user table, change role] [review]).
+
