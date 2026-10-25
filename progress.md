@@ -70,5 +70,12 @@
 - Added database queries and unit test suites in `src/__tests__/dashboard.test.ts` and `src/__tests__/user-dashboard.test.ts` (158 total tests passing).
 - Next run needs to know: proceed to Task 15 (`src/lib/ai/provider.ts` [Gemini via Vercel AI SDK, model from `AI_MODEL`], shared error handling for 429, and a per-user rate limiter for `/api/ai/*` [review]).
 
+## Task 15: AI provider, shared 429 error handling, and rate limiter [review]
+- Installed `ai` and `@ai-sdk/google`; implemented `src/lib/ai/provider.ts` with dynamic model resolution from `AI_MODEL` (fallback `gemini-2.0-flash`) and shared `handleAIError` returning 429 with `AI_QUOTA_EXCEEDED` on Google AI free-tier quota limits.
+- Built rolling-window per-user rate limiter (`src/lib/ai/rate-limiter.ts`) enforcing limits on `/api/ai/*` routes with automatic cleanup of expired inactive user entries, and added `requireAIPermission` in `src/lib/permissions.ts`.
+- Added 18 unit tests in `src/__tests__/ai-provider.test.ts` (176 total tests passing) and completed CodeRabbit review pass with zero findings.
+- Next run needs to know: proceed to Task 16 (`POST /api/ai/breakdown` with structured output [Zod schema] and a button on the project page [review]).
+
+
 
 

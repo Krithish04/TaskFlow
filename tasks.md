@@ -23,7 +23,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 14. User dashboard (assigned tasks, due soon, recent comments).
 
 ## AI
-- [ ] 15. [review] `src/lib/ai/provider.ts` (Gemini via Vercel AI SDK, model from `AI_MODEL`), shared error handling for 429, and a per-user rate limiter for `/api/ai/*`.
+- [x] 15. [review] `src/lib/ai/provider.ts` (Gemini via Vercel AI SDK, model from `AI_MODEL`), shared error handling for 429, and a per-user rate limiter for `/api/ai/*`.
 - [ ] 16. [review] `POST /api/ai/breakdown` with structured output (Zod schema) and a button on the project page.
 - [ ] 17. [review] `POST /api/ai/create-task`: returns a draft task, UI shows it for confirmation before saving.
 - [ ] 18. [review] `POST /api/ai/summarize-comments` and a Summarize button in the task drawer.

@@ -277,6 +277,39 @@ export async function requireProjectAccess(
 }
 
 /**
+ * Enforce that the requesting client is permitted to use the specified AI feature.
+ */
+export async function requireAIPermission(
+  feature: AIFeature,
+  sessionUser?: AuthUser | null
+): Promise<AuthUser> {
+  let user = sessionUser;
+  if (user === undefined) {
+    const session = await auth();
+    user = session?.user
+      ? {
+          id: session.user.id,
+          role: session.user.role,
+          name: session.user.name,
+          email: session.user.email,
+        }
+      : null;
+  }
+
+  if (!user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  if (!canUseAIFeature(user.role, feature)) {
+    throw new ForbiddenError(
+      `Forbidden: Role '${user.role}' is not allowed to use AI feature '${feature}'`
+    );
+  }
+
+  return user;
+}
+
+/**
  * Helper to convert auth errors into appropriate JSON responses in route handlers.
  */
 export function handleAuthError(error: unknown) {
