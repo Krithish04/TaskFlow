@@ -6,6 +6,7 @@ import { Task } from "@/models/Task";
 import {
   requireProjectAccess,
   handleAuthError,
+  matchesId,
 } from "@/lib/permissions";
 
 const createTaskSchema = z.object({
@@ -107,7 +108,20 @@ export async function POST(
   }
 
   try {
-    const { user } = await requireProjectAccess(id, "edit");
+    const { user, project } = await requireProjectAccess(id, "edit");
+
+    if (assignee) {
+      const isMember =
+        matchesId(project.owner, assignee) ||
+        project.members?.some((m) => matchesId(m, assignee));
+      if (!isMember) {
+        return NextResponse.json(
+          { error: "Assignee must be a member of this project" },
+          { status: 400 }
+        );
+      }
+    }
+
     await connectDB();
 
     let taskOrder = parsed.data.order;

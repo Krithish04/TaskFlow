@@ -95,7 +95,7 @@ describe("Comments API - GET & POST /api/tasks/[id]/comments", () => {
       expect(res.status).toBe(401);
     });
 
-    it("returns 403 if user is not in the project and not admin", async () => {
+    it("returns 404 if user is not in the project and not admin", async () => {
       vi.spyOn(Task, "findById").mockResolvedValue(mockTaskDoc as never);
       vi.spyOn(Project, "findById").mockResolvedValue(mockProjectDoc as never);
       vi.spyOn(authModule, "auth").mockResolvedValue(outsideUserSession as never);
@@ -104,7 +104,7 @@ describe("Comments API - GET & POST /api/tasks/[id]/comments", () => {
         new NextRequest(`http://localhost/api/tasks/${taskId}/comments`),
         { params: Promise.resolve({ id: taskId }) }
       );
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it("returns 200 with comments for project member", async () => {
@@ -228,7 +228,7 @@ describe("Comments API - GET & POST /api/tasks/[id]/comments", () => {
       expect(res.status).toBe(401);
     });
 
-    it("returns 403 if user does not belong to project", async () => {
+    it("returns 404 if user does not belong to project", async () => {
       vi.spyOn(Task, "findById").mockResolvedValue(mockTaskDoc as never);
       vi.spyOn(Project, "findById").mockResolvedValue(mockProjectDoc as never);
       vi.spyOn(authModule, "auth").mockResolvedValue(outsideUserSession as never);
@@ -240,7 +240,7 @@ describe("Comments API - GET & POST /api/tasks/[id]/comments", () => {
         }),
         { params: Promise.resolve({ id: taskId }) }
       );
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it("returns 201 and creates comment when called by project member", async () => {

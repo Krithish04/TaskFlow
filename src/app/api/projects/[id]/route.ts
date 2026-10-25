@@ -103,11 +103,36 @@ export async function PATCH(
     if (parsed.data.status !== undefined) {
       project.status = parsed.data.status;
     }
+    let removedMembers: string[] = [];
     if (parsed.data.members !== undefined) {
-      project.members = parsed.data.members.map((m) => new Types.ObjectId(m));
+      const oldMemberIds = (project.members || []).map((m: unknown) =>
+        (m as { _id?: unknown })?._id
+          ? (m as { _id: unknown })._id!.toString()
+          : m!.toString()
+      );
+      const newMemberIds = [
+        ...new Set(
+          parsed.data.members.map((m) => new Types.ObjectId(m).toString())
+        ),
+      ];
+      removedMembers = oldMemberIds.filter(
+        (oldId: string) => !newMemberIds.includes(oldId)
+      );
+
+      project.members = newMemberIds.map((m) => new Types.ObjectId(m));
     }
 
     await project.save();
+
+    if (removedMembers.length > 0) {
+      await Task.updateMany(
+        {
+          project: project._id,
+          assignee: { $in: removedMembers.map((m) => new Types.ObjectId(m)) },
+        },
+        { $set: { assignee: null } }
+      );
+    }
     await project.populate("owner", "name email role");
     await project.populate("members", "name email role");
 

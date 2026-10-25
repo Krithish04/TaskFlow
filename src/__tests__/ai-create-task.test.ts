@@ -147,7 +147,7 @@ describe("POST /api/ai/create-task - API Route", () => {
     expect(res.status).toBe(403);
   });
 
-  it("returns 403 if PM does not own the project", async () => {
+  it("returns 404 if PM does not own or belong to the project", async () => {
     vi.spyOn(authModule, "auth").mockResolvedValueOnce(pmOtherSession as never);
 
     const req = new NextRequest("http://localhost/api/ai/create-task", {
@@ -156,7 +156,7 @@ describe("POST /api/ai/create-task - API Route", () => {
     });
 
     const res = await postAICreateTask(req);
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it("returns 429 if rate limit is exceeded for the user", async () => {

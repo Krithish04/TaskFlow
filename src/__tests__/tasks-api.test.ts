@@ -78,7 +78,7 @@ describe("Tasks API - Permissions and Operations", () => {
       expect(res.status).toBe(400);
     });
 
-    it("returns 403 when user is not member or owner", async () => {
+    it("returns 404 when user is not member or owner", async () => {
       vi.spyOn(authModule, "auth").mockResolvedValueOnce(otherUserSession as never);
       vi.spyOn(Project, "findById").mockResolvedValueOnce(mockProjectDoc as never);
 
@@ -86,7 +86,7 @@ describe("Tasks API - Permissions and Operations", () => {
       const res = await getProjectTasks(req, {
         params: Promise.resolve({ id: projectId }),
       });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it("returns 200 with tasks when user is assigned member", async () => {
@@ -136,7 +136,7 @@ describe("Tasks API - Permissions and Operations", () => {
       expect(res.status).toBe(403);
     });
 
-    it("returns 403 when non-owner PM attempts to create task", async () => {
+    it("returns 404 when non-owner PM attempts to create task", async () => {
       vi.spyOn(authModule, "auth").mockResolvedValueOnce(pmOtherSession as never);
       vi.spyOn(Project, "findById").mockResolvedValueOnce(mockProjectDoc as never);
 
@@ -148,7 +148,7 @@ describe("Tasks API - Permissions and Operations", () => {
       const res = await postProjectTask(req, {
         params: Promise.resolve({ id: projectId }),
       });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it("returns 400 when task title is missing", async () => {

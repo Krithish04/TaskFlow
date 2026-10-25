@@ -167,13 +167,13 @@ All 26 test suites (240+ tests) cover:
 
 ### 1. MongoDB Atlas Setup
 1. Create a free **M0 Sandbox** cluster on [MongoDB Atlas](https://cloud.mongodb.com/).
-2. Under **Database Access**, create a database user with `readWriteAnyDatabase` or scoped readWrite privileges on `taskflow`.
+2. Under **Database Access**, create a database user with the `readWrite` role scoped to the `taskflow` database only.
 3. Under **Network Access**, add `0.0.0.0/0` (Allow Access from Anywhere) to permit connections from serverless hosting environments like Vercel.
 4. Copy the connection string (SRV format) and replace `<password>` and database name:
    ```
    mongodb+srv://<username>:<password>@<cluster>.mongodb.net/taskflow?retryWrites=true&w=majority
    ```
-5. *(Optional)* Run `npm run seed` locally pointing `MONGODB_URI` to your Atlas cluster before production launch to seed initial demo accounts.
+5. Run `npm run seed` only with an isolated non-production database. Never point it at the application production database. Create production admin accounts with unique passwords.
 
 ### 2. Vercel Deployment
 1. Push your repository to GitHub or GitLab.

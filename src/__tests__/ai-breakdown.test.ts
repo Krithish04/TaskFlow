@@ -118,7 +118,7 @@ describe("POST /api/ai/breakdown - API Route", () => {
     expect(res.status).toBe(403);
   });
 
-  it("returns 403 if PM does not own the project", async () => {
+  it("returns 404 if PM does not own or belong to the project", async () => {
     vi.spyOn(authModule, "auth").mockResolvedValueOnce(pmOtherSession as never);
     vi.spyOn(Project, "findById").mockResolvedValueOnce(mockProjectDoc as never);
 
@@ -128,7 +128,7 @@ describe("POST /api/ai/breakdown - API Route", () => {
     });
 
     const res = await postAIBreakdown(req);
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it("returns 429 if rate limit is exceeded for the user", async () => {

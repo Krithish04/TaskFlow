@@ -7,6 +7,7 @@ import { Comment } from "@/models/Comment";
 import {
   requireProjectAccess,
   handleAuthError,
+  matchesId,
 } from "@/lib/permissions";
 
 const updateTaskSchema = z.object({
@@ -125,7 +126,19 @@ export async function PATCH(
       );
     }
 
-    await requireProjectAccess(task.project, "edit");
+    const { project } = await requireProjectAccess(task.project, "edit");
+
+    if (parsed.data.assignee) {
+      const isMember =
+        matchesId(project.owner, parsed.data.assignee) ||
+        project.members?.some((m) => matchesId(m, parsed.data.assignee));
+      if (!isMember) {
+        return NextResponse.json(
+          { error: "Assignee must be a member of this project" },
+          { status: 400 }
+        );
+      }
+    }
 
     if (parsed.data.title !== undefined) task.title = parsed.data.title;
     if (parsed.data.description !== undefined) task.description = parsed.data.description;

@@ -348,7 +348,7 @@ describe("Server Helper: requireProjectAccess()", () => {
     expect(result.user).toBe(pmUser);
   });
 
-  it("throws ForbiddenError when non-owner PM tries 'edit'", async () => {
+  it("throws NotFoundError when outsider tries 'edit'", async () => {
     const nonOwnerPM: AuthUser = {
       id: new mongoose.Types.ObjectId().toString(),
       role: "pm",
@@ -358,12 +358,16 @@ describe("Server Helper: requireProjectAccess()", () => {
 
     await expect(
       requireProjectAccess(mockProject as never, "edit", nonOwnerPM)
-    ).rejects.toThrow(ForbiddenError);
+    ).rejects.toThrow(NotFoundError);
   });
 
-  it("throws ForbiddenError when regular user tries 'manage'", async () => {
+  it("throws ForbiddenError when project member tries 'manage'", async () => {
+    const projectWithMember = {
+      ...mockProject,
+      members: [new mongoose.Types.ObjectId(otherUser.id)],
+    };
     await expect(
-      requireProjectAccess(mockProject as never, "manage", otherUser)
+      requireProjectAccess(projectWithMember as never, "manage", otherUser)
     ).rejects.toThrow(ForbiddenError);
   });
 

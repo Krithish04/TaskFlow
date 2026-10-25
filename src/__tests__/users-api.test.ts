@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { GET as getUsers, PATCH as patchUsers } from "@/app/api/users/route";
 import { GET as getUserById, PATCH as patchUserById } from "@/app/api/users/[id]/route";
 import { User } from "@/models/User";
+import { Project } from "@/models/Project";
 import * as authModule from "@/auth";
 
 vi.mock("@/lib/db", () => ({
@@ -58,20 +59,63 @@ describe("Users API - Permissions and Operations", () => {
       expect(data.error).toMatch(/Authentication required/i);
     });
 
-    it("returns 403 Forbidden when user is PM", async () => {
+    it("returns 200 with shared project users (name and id only) when user is PM", async () => {
       vi.spyOn(authModule, "auth").mockResolvedValueOnce(pmSession as never);
 
+      const sharedUserId = new mongoose.Types.ObjectId();
+      vi.spyOn(Project, "find").mockReturnValueOnce({
+        lean: vi.fn().mockResolvedValueOnce([
+          {
+            _id: new mongoose.Types.ObjectId(),
+            owner: new mongoose.Types.ObjectId(pmSession.user.id),
+            members: [sharedUserId],
+          },
+        ]),
+      } as never);
+
+      vi.spyOn(User, "find").mockReturnValueOnce({
+        sort: vi.fn().mockReturnValueOnce({
+          lean: vi.fn().mockResolvedValueOnce([
+            {
+              _id: sharedUserId,
+              name: "Teammate",
+            },
+          ]),
+        }),
+      } as never);
+
       const response = await getUsers();
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(200);
       const data = await response.json();
-      expect(data.error).toMatch(/Insufficient permissions/i);
+      expect(data.users).toEqual([
+        { _id: sharedUserId.toString(), name: "Teammate" },
+      ]);
+      expect(data.users[0].email).toBeUndefined();
+      expect(data.users[0].role).toBeUndefined();
     });
 
-    it("returns 403 Forbidden when user is standard member", async () => {
+    it("returns 200 with shared project users when user is standard member", async () => {
       vi.spyOn(authModule, "auth").mockResolvedValueOnce(regularUserSession as never);
 
+      vi.spyOn(Project, "find").mockReturnValueOnce({
+        lean: vi.fn().mockResolvedValueOnce([]),
+      } as never);
+
+      vi.spyOn(User, "find").mockReturnValueOnce({
+        sort: vi.fn().mockReturnValueOnce({
+          lean: vi.fn().mockResolvedValueOnce([
+            {
+              _id: new mongoose.Types.ObjectId(regularUserSession.user.id),
+              name: "Regular Member",
+            },
+          ]),
+        }),
+      } as never);
+
       const response = await getUsers();
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      expect(data.users).toBeDefined();
     });
 
     it("returns 200 and user list without password hashes when admin", async () => {

@@ -306,7 +306,24 @@ export default async function DashboardPage() {
       .sort({ createdAt: -1 })
       .lean();
 
-    const usersDoc = await User.find({}, "name email role")
+    const sharedUserIdSet = new Set<string>();
+    sharedUserIdSet.add(session.user.id);
+    for (const p of pmProjectsDoc) {
+      const ownerObj = p.owner as unknown as { _id?: unknown } | null;
+      if (ownerObj?._id) sharedUserIdSet.add(ownerObj._id.toString());
+      if (Array.isArray(p.members)) {
+        for (const m of p.members) {
+          const memberObj = m as unknown as { _id?: unknown; id?: string };
+          const mId = memberObj?._id?.toString() || memberObj?.id;
+          if (mId) sharedUserIdSet.add(mId);
+        }
+      }
+    }
+
+    const usersDoc = await User.find(
+      { _id: { $in: Array.from(sharedUserIdSet) } },
+      "_id name"
+    )
       .sort({ name: 1 })
       .lean();
 
@@ -339,8 +356,6 @@ export default async function DashboardPage() {
     const availableUsers: AvailableMember[] = usersDoc.map((u) => ({
       id: u._id.toString(),
       name: u.name,
-      email: u.email,
-      role: u.role,
     }));
 
     return (
@@ -414,7 +429,10 @@ export default async function DashboardPage() {
 
   const projectIds = userProjectsDoc.map((p) => p._id);
 
-  const assignedTasksDoc = await Task.find({ assignee: session.user.id })
+  const assignedTasksDoc = await Task.find({
+    assignee: session.user.id,
+    project: { $in: projectIds },
+  })
     .populate("project", "name")
     .sort({ dueDate: 1, createdAt: -1 })
     .lean();
@@ -434,9 +452,9 @@ export default async function DashboardPage() {
     };
   });
 
-  // Recent comments on user's assigned tasks or member projects
+  // Recent comments on user's member projects
   const relevantTasks = await Task.find(
-    { $or: [{ assignee: session.user.id }, { project: { $in: projectIds } }] },
+    { project: { $in: projectIds } },
     "_id"
   ).lean();
   const relevantTaskIds = relevantTasks.map((t) => t._id);

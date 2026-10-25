@@ -49,8 +49,8 @@ export interface DashboardProject {
 export interface AvailableMember {
   id: string;
   name: string;
-  email: string;
-  role: string;
+  email?: string;
+  role?: string;
 }
 
 interface PMProjectsProps {
@@ -473,9 +473,11 @@ export function PMProjects({
                           />
                           <div className="min-w-0">
                             <p className="font-medium truncate">{user.name}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">
-                              {user.email}
-                            </p>
+                            {user.email ? (
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {user.email}
+                              </p>
+                            ) : null}
                           </div>
                         </label>
                       );

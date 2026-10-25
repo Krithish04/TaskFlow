@@ -188,7 +188,7 @@ describe("POST /api/ai/assistant - Streaming API Route", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 403 when a user lacks view access to the project", async () => {
+  it("returns 404 when a user lacks view access to the project", async () => {
     vi.spyOn(authModule, "auth").mockResolvedValue(nonMemberSession as never);
 
     const req = new NextRequest("http://localhost/api/ai/assistant", {
@@ -201,7 +201,7 @@ describe("POST /api/ai/assistant - Streaming API Route", () => {
 
     const res = (await postAssistant(req))!;
     expect(res).toBeDefined();
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it("allows regular project members with role 'user' to use the assistant (PRD permission matrix)", async () => {

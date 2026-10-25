@@ -217,7 +217,7 @@ describe("Projects API - Permissions and Operations", () => {
       expect(res.status).toBe(404);
     });
 
-    it("returns 403 when user is not member, owner, or admin", async () => {
+    it("returns 404 when user is not member, owner, or admin", async () => {
       vi.spyOn(authModule, "auth").mockResolvedValueOnce(userSession as never);
 
       const mockProject = {
@@ -232,7 +232,7 @@ describe("Projects API - Permissions and Operations", () => {
       const res = await getProjectById(req, {
         params: Promise.resolve({ id: validProjectId }),
       });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it("returns 200 when user is a member of the project", async () => {
@@ -263,7 +263,7 @@ describe("Projects API - Permissions and Operations", () => {
   describe("PATCH /api/projects/[id]", () => {
     const validProjectId = new mongoose.Types.ObjectId().toString();
 
-    it("returns 403 when non-owner PM attempts to edit project", async () => {
+    it("returns 404 when non-owner PM attempts to edit project", async () => {
       vi.spyOn(authModule, "auth").mockResolvedValueOnce(otherPmSession as never);
 
       const mockProject = {
@@ -281,7 +281,7 @@ describe("Projects API - Permissions and Operations", () => {
       const res = await patchProjectById(req, {
         params: Promise.resolve({ id: validProjectId }),
       });
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(404);
     });
 
     it("allows owner PM to edit project name and status", async () => {
@@ -319,12 +319,30 @@ describe("Projects API - Permissions and Operations", () => {
   describe("DELETE /api/projects/[id]", () => {
     const validProjectId = new mongoose.Types.ObjectId().toString();
 
-    it("returns 403 when regular user attempts to delete project", async () => {
+    it("returns 404 when outsider user attempts to delete project", async () => {
       vi.spyOn(authModule, "auth").mockResolvedValueOnce(userSession as never);
 
       const mockProject = {
         _id: validProjectId,
         owner: new mongoose.Types.ObjectId(pmId),
+        members: [],
+      };
+      vi.spyOn(Project, "findById").mockResolvedValueOnce(mockProject as never);
+
+      const req = new NextRequest(`http://localhost:3000/api/projects/${validProjectId}`);
+      const res = await deleteProjectById(req, {
+        params: Promise.resolve({ id: validProjectId }),
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 403 when project member attempts to delete project", async () => {
+      vi.spyOn(authModule, "auth").mockResolvedValueOnce(userSession as never);
+
+      const mockProject = {
+        _id: validProjectId,
+        owner: new mongoose.Types.ObjectId(pmId),
+        members: [new mongoose.Types.ObjectId(userId)],
       };
       vi.spyOn(Project, "findById").mockResolvedValueOnce(mockProject as never);
 

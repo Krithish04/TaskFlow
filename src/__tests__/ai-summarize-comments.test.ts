@@ -179,7 +179,7 @@ describe("POST /api/ai/summarize-comments - API Route", () => {
     expect(res.status).toBe(404);
   });
 
-  it("returns 403 if user does not belong to project", async () => {
+  it("returns 404 if user does not belong to project", async () => {
     vi.spyOn(authModule, "auth").mockResolvedValueOnce(outsiderSession as never);
 
     const req = new NextRequest("http://localhost/api/ai/summarize-comments", {
@@ -188,7 +188,7 @@ describe("POST /api/ai/summarize-comments - API Route", () => {
     });
 
     const res = await postSummarizeComments(req);
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(404);
   });
 
   it("returns 429 if rate limit is exceeded for the user", async () => {

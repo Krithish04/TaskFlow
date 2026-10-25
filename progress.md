@@ -118,5 +118,20 @@
   - Added unit test coverage for sibling reordering operations.
 - All 22 tasks in `tasks.md` are completed and verified.
 
+## Task 23: Complete project isolation, anti-probing 404 security, and isolation test suite [review]
+- Completed full audit of all 14 API routes, server components, and dashboard queries reading or writing Project, Task, or Comment data; documented exhaustive findings and access check patterns in `ISOLATION_AUDIT.md`.
+- Implemented shared helpers `getAccessibleProjectIds()` and `getSharedUserIds()` in `src/lib/permissions.ts`, and updated `requireProjectAccess()` to throw `NotFoundError` (status 404, not 403) when a user cannot view a project to prevent ID probing.
+- Enforced project isolation across all endpoints and queries:
+  - User and PM dashboard queries: restricted project lists, assigned tasks, and recent comments feed strictly to projects the user belongs to.
+  - `GET /api/users`: non-admins now only see users sharing at least one project with them, and only `name` and `id` (`_id`), hiding email and role.
+  - Task assignment: enforced in `POST /api/projects/[id]/tasks` and `PATCH /api/tasks/[id]` that assignees must belong to the project (as owner or member), rejecting outsiders with 400.
+  - Member removal: in `PATCH /api/projects/[id]`, normalized member IDs and automatically unassigned tasks for removed members via `Task.updateMany` after project save succeeds.
+  - Scoped task operations and comments: validated task's own project rather than client-provided project IDs, returning 404 for unviewable projects.
+  - AI endpoints: enforced project view permissions and anti-probing 404 checks across `assistant`, `summarize-comments`, `breakdown`, `create-task`, and `weekly-report`, strictly scoping AI context and candidate members to the requested project.
+- Added comprehensive isolation test suite in `src/__tests__/isolation.test.ts` (33 tests) asserting that two isolated projects (A and B) prevent cross-project reads/writes, comment leaks, or AI context builder access, while allowing normal operations within authorized projects.
+- Ran `npm run lint` (0 errors, 0 warnings), `npm run typecheck` (clean), and `npm test` (all 27 suites, 276 tests passing).
+- Ran CodeRabbit review, resolved actionable recommendations (member ID normalization, deferred task unassignment post-save, and scoped database privileges / seed cautions in `README.md`).
+
 ALL_TASKS_DONE
+
 

@@ -3,7 +3,11 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
-import { requireRole, handleAuthError } from "@/lib/permissions";
+import {
+  requireRole,
+  handleAuthError,
+  getSharedUserIds,
+} from "@/lib/permissions";
 
 const patchUserSchema = z.object({
   id: z.string().min(1, "User ID is required"),
@@ -11,8 +15,9 @@ const patchUserSchema = z.object({
 });
 
 export async function GET() {
+  let user;
   try {
-    await requireRole("admin");
+    user = await requireRole(["admin", "pm", "user"]);
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
@@ -24,8 +29,20 @@ export async function GET() {
 
   try {
     await connectDB();
-    const users = await User.find({}, "name email role createdAt updatedAt")
-      .sort({ createdAt: -1 })
+
+    if (user.role === "admin") {
+      const users = await User.find({}, "name email role createdAt updatedAt")
+        .sort({ createdAt: -1 })
+        .lean();
+      return NextResponse.json({ users });
+    }
+
+    const sharedUserIds = await getSharedUserIds(user);
+    const users = await User.find(
+      { _id: { $in: sharedUserIds } },
+      "_id name"
+    )
+      .sort({ name: 1 })
       .lean();
 
     return NextResponse.json({ users });

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import { Project, type IProject } from "@/models/Project";
-import type { UserRole } from "@/models/User";
+import { User, type UserRole } from "@/models/User";
 
 export class UnauthorizedError extends Error {
   status = 401;
@@ -215,16 +215,136 @@ export async function requireRole(
 }
 
 /**
+ * Return all Project IDs accessible to the user (owner or member; all if admin).
+ */
+export async function getAccessibleProjectIds(
+  sessionUser?: AuthUser | null
+): Promise<Types.ObjectId[]> {
+  let user = sessionUser;
+  if (user === undefined) {
+    const session = await auth();
+    user = session?.user
+      ? {
+          id: session.user.id,
+          role: session.user.role,
+          name: session.user.name,
+          email: session.user.email,
+        }
+      : null;
+  }
+
+  if (!user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  await connectDB();
+
+  if (user.role === "admin") {
+    const projects = await Project.find({}, "_id").lean();
+    return projects.map((p) => p._id as Types.ObjectId);
+  }
+
+  const userObjectId = Types.ObjectId.isValid(user.id)
+    ? new Types.ObjectId(user.id)
+    : user.id;
+
+  const projects = await Project.find(
+    {
+      $or: [{ owner: userObjectId }, { members: userObjectId }],
+    },
+    "_id"
+  ).lean();
+
+  return projects.map((p) => p._id as Types.ObjectId);
+}
+
+/**
+ * Return all User IDs who share at least one project with the given user (all users if admin).
+ */
+export async function getSharedUserIds(
+  sessionUser?: AuthUser | null
+): Promise<Types.ObjectId[]> {
+  let user = sessionUser;
+  if (user === undefined) {
+    const session = await auth();
+    user = session?.user
+      ? {
+          id: session.user.id,
+          role: session.user.role,
+          name: session.user.name,
+          email: session.user.email,
+        }
+      : null;
+  }
+
+  if (!user) {
+    throw new UnauthorizedError("Authentication required");
+  }
+
+  await connectDB();
+
+  if (user.role === "admin") {
+    const users = await User.find({}, "_id").lean();
+    return users.map((u) => u._id as Types.ObjectId);
+  }
+
+  const userObjectId = Types.ObjectId.isValid(user.id)
+    ? new Types.ObjectId(user.id)
+    : user.id;
+
+  const projects = await Project.find(
+    {
+      $or: [{ owner: userObjectId }, { members: userObjectId }],
+    },
+    "owner members"
+  ).lean();
+
+  const idSet = new Set<string>();
+  if (Types.ObjectId.isValid(user.id)) {
+    idSet.add(user.id.toString());
+  }
+
+  for (const proj of projects) {
+    if (proj.owner) {
+      idSet.add(proj.owner.toString());
+    }
+    if (Array.isArray(proj.members)) {
+      for (const m of proj.members) {
+        if (m) {
+          idSet.add(m.toString());
+        }
+      }
+    }
+  }
+
+  return Array.from(idSet).map((id) => new Types.ObjectId(id));
+}
+
+/**
  * Enforce that the requesting client has access to the specified project.
  * Supports "view", "comment" (member/owner/admin) or "edit", "manage" (owner/admin).
  * Accepts project ID string, ObjectId, or loaded project object.
+ * Returns 404 (not 403) when user lacks project view access to prevent ID probing.
  */
 export async function requireProjectAccess(
   projectIdOrProject: string | Types.ObjectId | IProject,
-  accessLevel: ProjectAccessLevel = "view",
-  sessionUser?: AuthUser | null
+  accessLevelOrUser: ProjectAccessLevel | AuthUser = "view",
+  userOrAccessLevel?: AuthUser | ProjectAccessLevel | null
 ): Promise<{ user: AuthUser; project: IProject }> {
-  let user = sessionUser;
+  let accessLevel: ProjectAccessLevel = "view";
+  let userParam: AuthUser | null | undefined = undefined;
+
+  if (typeof accessLevelOrUser === "string") {
+    accessLevel = accessLevelOrUser;
+    userParam = userOrAccessLevel as AuthUser | null | undefined;
+  } else if (typeof accessLevelOrUser === "object" && accessLevelOrUser !== null) {
+    userParam = accessLevelOrUser;
+    if (typeof userOrAccessLevel === "string") {
+      accessLevel = userOrAccessLevel;
+    }
+  }
+
+  let user = userParam;
   if (user === undefined) {
     const session = await auth();
     user = session?.user
@@ -259,16 +379,15 @@ export async function requireProjectAccess(
     project = projectIdOrProject;
   }
 
+  // Anti-probing: if client cannot view this project, return 404 so existence cannot be probed
+  if (!canViewProject(user, project)) {
+    throw new NotFoundError("Project not found");
+  }
+
   if (accessLevel === "edit" || accessLevel === "manage") {
     if (!canEditProject(user, project)) {
       throw new ForbiddenError(
         "Forbidden: Only project owner or admin can perform this action"
-      );
-    }
-  } else {
-    if (!canViewProject(user, project)) {
-      throw new ForbiddenError(
-        "Forbidden: You do not have access to this project"
       );
     }
   }
