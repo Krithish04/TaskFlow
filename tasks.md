@@ -6,7 +6,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 1. Scaffold Next.js (App Router, TypeScript, Tailwind, ESLint) in the repo root, add `typecheck` and `test` scripts, set up Vitest.
 - [x] 2. Add shadcn/ui, a base layout, and `.env.example` (MONGODB_URI, AUTH_SECRET, GOOGLE_GENERATIVE_AI_API_KEY, AI_MODEL).
 - [x] 3. Mongoose connection helper (cached for dev hot reload) and the four models: User, Project, Task, Comment, with indexes.
-- [ ] 4. `scripts/seed.ts` and `npm run seed`: 1 admin, 1 PM, 2 users, 1 demo project with 8 tasks. Refuse to run in production.
+- [x] 4. `scripts/seed.ts` and `npm run seed`: 1 admin, 1 PM, 2 users, 1 demo project with 8 tasks. Refuse to run in production.
 
 ## Auth and roles
 - [ ] 5. [review] Auth.js credentials login with bcrypt; session includes `id` and `role`.

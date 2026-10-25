@@ -28,13 +28,11 @@ const ProjectSchema = new Schema<IProject>(
       type: Schema.Types.ObjectId,
       ref: "User",
       required: [true, "Project owner is required"],
-      index: true,
     },
     members: [
       {
         type: Schema.Types.ObjectId,
         ref: "User",
-        index: true,
       },
     ],
     status: {
