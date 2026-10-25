@@ -3,7 +3,7 @@
 import * as React from "react";
 import { TaskComment } from "./types";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Send, Loader2, AlertCircle } from "lucide-react";
+import { MessageSquare, Send, Loader2, AlertCircle, Sparkles } from "lucide-react";
 
 interface TaskCommentsProps {
   taskId: string;
@@ -15,6 +15,9 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = React.useState(false);
+  const [summary, setSummary] = React.useState<string | null>(null);
+  const [summaryError, setSummaryError] = React.useState<string | null>(null);
 
   // Poll for comments every 5 seconds
   React.useEffect(() => {
@@ -57,6 +60,32 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
     };
   }, [taskId]);
 
+  const handleSummarize = async () => {
+    setIsSummarizing(true);
+    setSummaryError(null);
+
+    try {
+      const res = await fetch("/api/ai/summarize-comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to summarize comments");
+      }
+
+      setSummary(data.summary || "No comments on this task to summarize yet.");
+    } catch (err) {
+      setSummaryError(
+        err instanceof Error ? err.message : "Error summarizing comments"
+      );
+    } finally {
+      setIsSummarizing(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = newComment.trim();
@@ -97,7 +126,74 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
             {comments.length}
           </span>
         </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleSummarize}
+          disabled={isSummarizing || comments.length === 0}
+          className="gap-1.5 text-xs h-7 border-primary/30 text-primary hover:bg-primary/5 font-medium"
+        >
+          {isSummarizing ? (
+            <>
+              <Loader2 className="size-3 animate-spin" />
+              Summarizing...
+            </>
+          ) : (
+            <>
+              <Sparkles className="size-3 text-primary" />
+              Summarize
+            </>
+          )}
+        </Button>
       </div>
+
+      {/* Summary Error Alert */}
+      {summaryError && (
+        <div
+          role="alert"
+          className="flex items-center justify-between gap-2 rounded-lg p-2.5 text-xs bg-destructive/10 border border-destructive/20 text-destructive"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-4 shrink-0" />
+            <span>{summaryError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSummaryError(null)}
+            className="text-[11px] underline opacity-80 hover:opacity-100"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {/* AI Summary Card */}
+      {summary && (
+        <div
+          role="region"
+          aria-label="AI Comment Summary"
+          className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2 text-xs animate-in fade-in"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 font-semibold text-primary">
+              <Sparkles className="size-3.5" />
+              <span>AI Discussion Summary</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSummary(null)}
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+          <p className="text-foreground/90 whitespace-pre-wrap leading-relaxed text-[12px]">
+            {summary}
+          </p>
+        </div>
+      )}
 
       {error && (
         <div

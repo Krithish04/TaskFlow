@@ -87,3 +87,9 @@
 - Built interactive `AICreateTaskDialog` on `/projects/[id]` allowing users to enter natural language prompts, view and customize draft task details (title, description, status, priority, assignee, due date), and confirm before saving to the board; integrated into `KanbanBoard` header and create card. Added 13 unit tests across `ai-create-task.test.ts` and `ai-create-task-dialog.test.ts` (201 total tests passing). Completed CodeRabbit review with 0 findings on task files.
 - Next run needs to know: proceed to Task 18 (`POST /api/ai/summarize-comments` and a Summarize button in the task drawer [review]).
 
+## Task 18: AI comment summarization and Task Drawer button [review]
+- Implemented `POST /api/ai/summarize-comments` with bounded stream body reading (16KB cap), Zod validation, role and project view access checks, per-user rate limiting, empty comment handling, and isolated AI error handling to prevent sensitive information disclosure.
+- Added interactive "Summarize" button and dismissible AI Discussion Summary card to `TaskComments` in the task drawer, providing synthesized summaries with key updates, decisions, and action items. Added 13 unit tests across `ai-summarize-comments.test.ts` and `task-comments.test.ts` (214 total tests passing). Addressed CodeRabbit review feedback with 0 remaining findings.
+- Next run needs to know: proceed to Task 19 (`POST /api/ai/weekly-report` [PM/Admin only] and a report view on the PM dashboard [review]).
+
+
