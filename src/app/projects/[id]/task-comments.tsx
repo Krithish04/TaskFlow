@@ -106,7 +106,11 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
         throw new Error(data.error || "Failed to post comment");
       }
 
-      setComments((prev) => [...prev, data.comment]);
+      setComments((prev) =>
+        prev.some((c) => c._id === data.comment._id)
+          ? prev
+          : [...prev, data.comment]
+      );
       setNewComment("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error posting comment");

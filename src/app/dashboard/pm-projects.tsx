@@ -21,7 +21,9 @@ import {
   X,
   AlertCircle,
   Layers,
+  FileText,
 } from "lucide-react";
+import { WeeklyReportDialog } from "./weekly-report-dialog";
 
 export interface DashboardProjectMember {
   id: string;
@@ -68,6 +70,7 @@ export function PMProjects({
   const [isCreating, setIsCreating] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [editingProject, setEditingProject] = React.useState<DashboardProject | null>(null);
+  const [selectedReportProject, setSelectedReportProject] = React.useState<DashboardProject | null>(null);
   const [statusMessage, setStatusMessage] = React.useState<{
     type: "success" | "error";
     text: string;
@@ -579,13 +582,26 @@ export function PMProjects({
                   </div>
 
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">
-                    <Link
-                      href={`/projects/${project.id}`}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                    >
-                      <span>Open Board</span>
-                      <ArrowRight className="size-3.5" />
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/projects/${project.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        <span>Open Board</span>
+                        <ArrowRight className="size-3.5" />
+                      </Link>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedReportProject(project)}
+                        className="gap-1 text-[11px] h-6 px-2 border-primary/30 text-primary hover:bg-primary/5 font-medium"
+                      >
+                        <FileText className="size-3" />
+                        Weekly Report
+                      </Button>
+                    </div>
 
                     {isOwner && (
                       <div className="flex items-center gap-1">
@@ -613,6 +629,16 @@ export function PMProjects({
             );
           })}
         </div>
+      )}
+
+      {/* AI Weekly Status Report Dialog */}
+      {selectedReportProject && (
+        <WeeklyReportDialog
+          projectId={selectedReportProject.id}
+          projectName={selectedReportProject.name}
+          isOpen={!!selectedReportProject}
+          onClose={() => setSelectedReportProject(null)}
+        />
       )}
     </div>
   );

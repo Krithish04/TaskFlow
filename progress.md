@@ -92,4 +92,10 @@
 - Added interactive "Summarize" button and dismissible AI Discussion Summary card to `TaskComments` in the task drawer, providing synthesized summaries with key updates, decisions, and action items. Added 13 unit tests across `ai-summarize-comments.test.ts` and `task-comments.test.ts` (214 total tests passing). Addressed CodeRabbit review feedback with 0 remaining findings.
 - Next run needs to know: proceed to Task 19 (`POST /api/ai/weekly-report` [PM/Admin only] and a report view on the PM dashboard [review]).
 
+## Task 19: AI weekly report API and PM dashboard report view [review]
+- Implemented `POST /api/ai/weekly-report` for PM and Admin roles with bounded stream body reading (16KB cap), Zod validation, role and project permissions (`edit`), per-user rate limiting, project task metrics aggregation (done, in-progress, review, overdue, at-risk, and workload distribution), and Gemini executive report generation with prompt character budgeting.
+- Built interactive `WeeklyReportDialog` on the PM dashboard (`src/app/dashboard/pm-projects.tsx`), featuring project status metric cards, full executive summary with markdown rendering, one-click clipboard copying, and report regeneration. Added 12 unit tests across `ai-weekly-report.test.ts` and `weekly-report-dialog.test.ts` (226 total tests passing). Addressed CodeRabbit review feedback with 0 findings on task files.
+- Next run needs to know: proceed to Task 20 (`POST /api/ai/assistant`: streaming chat panel answering from the project's real task data, read-only [review]).
+
+
 
