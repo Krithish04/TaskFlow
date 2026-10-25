@@ -83,6 +83,7 @@ describe("TaskDrawer Component", () => {
     expect(html).toContain("Rahul Verma");
     expect(html).toContain("high");
     expect(html).toContain("Priority");
+    expect(html).toContain("Comments");
     expect(html).not.toContain("Save Changes");
   });
 
@@ -102,5 +103,6 @@ describe("TaskDrawer Component", () => {
     expect(html).toContain("Save Changes");
     expect(html).toContain("Delete Task");
     expect(html).toContain("drawerTaskTitle");
+    expect(html).toContain("Comments");
   });
 });

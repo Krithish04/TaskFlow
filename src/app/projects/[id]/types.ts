@@ -21,6 +21,20 @@ export interface KanbanTask {
   createdAt: string;
 }
 
+export interface TaskComment {
+  _id: string;
+  task: string;
+  author: {
+    _id?: string;
+    id?: string;
+    name: string;
+    email: string;
+    role?: string;
+  };
+  body: string;
+  createdAt: string;
+}
+
 export interface KanbanProject {
   id: string;
   name: string;

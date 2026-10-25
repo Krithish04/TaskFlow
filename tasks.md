@@ -19,7 +19,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 10. [review] Tasks API (list, create, edit, delete, move) with permission checks and tests.
 - [x] 11. Kanban board page with dnd-kit: four columns, drag between and within columns, persists `status` and `order`.
 - [x] 12. Task drawer: edit fields (PM/Admin), view details.
-- [ ] 13. [review] Comments API and comment thread in the drawer, polling every 5 s.
+- [x] 13. [review] Comments API and comment thread in the drawer, polling every 5 s.
 - [ ] 14. User dashboard (assigned tasks, due soon, recent comments).
 
 ## AI

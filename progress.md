@@ -60,3 +60,9 @@
 - Implemented read-only task metadata and details view for members and full editing capabilities (title, description, status, priority, assignee, due date) plus task deletion for project owners and Admins via `PATCH/DELETE /api/tasks/[id]`. Added unit tests in `src/__tests__/task-drawer.test.ts` (141 total tests passing).
 - Next run needs to know: proceed to Task 13 (Comments API and comment thread in the drawer, polling every 5 s [review]).
 
+## Task 13: Comments API and comment thread in the drawer, polling every 5 s [review]
+- Implemented Comments API (`GET/POST /api/tasks/[id]/comments`) with Zod validation, request size limits (413 payload guard), safe author population fallback, and project-level permission enforcement (Admin and project members/owners).
+- Built `TaskComments` component with 5-second polling interval, error handling for background polling, accessible textarea, and immediate optimistic updates, integrated into `TaskDrawer`. Added 14 unit tests in `src/__tests__/comments-api.test.ts` (155 total tests passing) and verified clean passing review with CodeRabbit.
+- Next run needs to know: proceed to Task 14 (User dashboard [assigned tasks, due soon, recent comments]).
+
+

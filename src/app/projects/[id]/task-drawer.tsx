@@ -3,6 +3,7 @@
 import * as React from "react";
 import { TaskStatus, TaskPriority } from "@/models/Task";
 import { KanbanTask, KanbanUser } from "./types";
+import { TaskComments } from "./task-comments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -425,6 +426,9 @@ function TaskDrawerContent({
                 <span>{new Date(task.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
+
+            {/* Comment Thread with 5s Polling */}
+            <TaskComments taskId={task.id} />
           </div>
 
           {/* Footer Controls */}
