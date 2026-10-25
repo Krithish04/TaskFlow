@@ -19,6 +19,7 @@ import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
 import { TaskDrawer } from "./task-drawer";
 import { AIBreakdownDialog } from "./ai-breakdown-dialog";
+import { AICreateTaskDialog } from "./ai-create-task-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,10 +60,15 @@ export function KanbanBoard({
   const [isCreatingTask, setIsCreatingTask] = React.useState(false);
   const [isSubmittingTask, setIsSubmittingTask] = React.useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = React.useState(false);
+  const [isAICreateOpen, setIsAICreateOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   const handleAITasksCreated = (newTasks: KanbanTask[]) => {
     setTasks((prev) => [...prev, ...newTasks]);
+  };
+
+  const handleAITaskCreated = (newTask: KanbanTask) => {
+    setTasks((prev) => [...prev, newTask]);
   };
 
   const handleSelectTask = (task: KanbanTask) => {
@@ -389,6 +395,14 @@ export function KanbanBoard({
             <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
               <Button
                 variant="outline"
+                onClick={() => setIsAICreateOpen(true)}
+                className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
+              >
+                <Sparkles className="size-3.5 text-primary" />
+                AI Task
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => setIsBreakdownOpen(true)}
                 className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
               >
@@ -437,14 +451,29 @@ export function KanbanBoard({
                 Add a task card to this project board.
               </CardDescription>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCreatingTask(false)}
-              className="size-8 p-0"
-            >
-              <X className="size-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsCreatingTask(false);
+                  setIsAICreateOpen(true);
+                }}
+                className="gap-1.5 text-xs h-8 border-primary/30 text-primary hover:bg-primary/5"
+              >
+                <Sparkles className="size-3 text-primary" />
+                Use AI Draft
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsCreatingTask(false)}
+                className="size-8 p-0"
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
           </CardHeader>
           <form onSubmit={handleCreateTask}>
             <CardContent className="space-y-4">
@@ -691,6 +720,16 @@ export function KanbanBoard({
         isOpen={isBreakdownOpen}
         onClose={() => setIsBreakdownOpen(false)}
         onTasksCreated={handleAITasksCreated}
+      />
+
+      {/* AI Create Task from Plain Language Dialog */}
+      <AICreateTaskDialog
+        projectId={project.id}
+        projectName={project.name}
+        isOpen={isAICreateOpen}
+        onClose={() => setIsAICreateOpen(false)}
+        availableMembers={availableMembers}
+        onTaskCreated={handleAITaskCreated}
       />
     </div>
   );

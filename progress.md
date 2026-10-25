@@ -81,3 +81,9 @@
 - Built interactive `AIBreakdownDialog` on `/projects/[id]` allowing PMs and Admins to input guidance, generate subtasks with priority and hourly estimates, review/select tasks, and batch-save them to the Kanban board.
 - Addressed CodeRabbit review feedback (bounded body stream DoS guard, estimate preservation, dialog ARIA attributes, incremental task saving, checkbox event propagation); added 12 unit tests across `ai-breakdown.test.ts` and `ai-breakdown-dialog.test.ts` (188 total tests passing).
 - Next run needs to know: proceed to Task 17 (`POST /api/ai/create-task`: returns a draft task, UI shows it for confirmation before saving [review]).
+
+## Task 17: AI create task from plain language and confirmation UI [review]
+- Implemented `POST /api/ai/create-task` with bounded body reading (16KB cap), Zod validation, role and project permissions (`edit`), per-user rate limiting, candidate member resolution (exact and fuzzy name matching), and structured draft generation via `generateObject`.
+- Built interactive `AICreateTaskDialog` on `/projects/[id]` allowing users to enter natural language prompts, view and customize draft task details (title, description, status, priority, assignee, due date), and confirm before saving to the board; integrated into `KanbanBoard` header and create card. Added 13 unit tests across `ai-create-task.test.ts` and `ai-create-task-dialog.test.ts` (201 total tests passing). Completed CodeRabbit review with 0 findings on task files.
+- Next run needs to know: proceed to Task 18 (`POST /api/ai/summarize-comments` and a Summarize button in the task drawer [review]).
+
