@@ -20,6 +20,7 @@ import { KanbanCard } from "./kanban-card";
 import { TaskDrawer } from "./task-drawer";
 import { AIBreakdownDialog } from "./ai-breakdown-dialog";
 import { AICreateTaskDialog } from "./ai-create-task-dialog";
+import { AIAssistantPanel } from "./ai-assistant-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +34,7 @@ import {
   Loader2,
   X,
   Sparkles,
+  Bot,
 } from "lucide-react";
 
 interface KanbanBoardProps {
@@ -61,6 +63,7 @@ export function KanbanBoard({
   const [isSubmittingTask, setIsSubmittingTask] = React.useState(false);
   const [isBreakdownOpen, setIsBreakdownOpen] = React.useState(false);
   const [isAICreateOpen, setIsAICreateOpen] = React.useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
   const handleAITasksCreated = (newTasks: KanbanTask[]) => {
@@ -391,33 +394,44 @@ export function KanbanBoard({
             )}
           </div>
 
-          {isOwnerOrAdmin && (
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-              <Button
-                variant="outline"
-                onClick={() => setIsAICreateOpen(true)}
-                className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
-              >
-                <Sparkles className="size-3.5 text-primary" />
-                AI Task
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setIsBreakdownOpen(true)}
-                className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
-              >
-                <Sparkles className="size-3.5 text-primary" />
-                AI Breakdown
-              </Button>
-              <Button
-                onClick={() => setIsCreatingTask(true)}
-                className="gap-1.5 font-medium text-xs h-9"
-              >
-                <Plus className="size-3.5" />
-                Add Task
-              </Button>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+            <Button
+              variant="outline"
+              onClick={() => setIsAssistantOpen(true)}
+              className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
+              id="ai-assistant-button"
+            >
+              <Bot className="size-3.5 text-primary" />
+              AI Assistant
+            </Button>
+            {isOwnerOrAdmin && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsAICreateOpen(true)}
+                  className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
+                >
+                  <Sparkles className="size-3.5 text-primary" />
+                  AI Task
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsBreakdownOpen(true)}
+                  className="gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/5 text-xs h-9"
+                >
+                  <Sparkles className="size-3.5 text-primary" />
+                  AI Breakdown
+                </Button>
+                <Button
+                  onClick={() => setIsCreatingTask(true)}
+                  className="gap-1.5 font-medium text-xs h-9"
+                >
+                  <Plus className="size-3.5" />
+                  Add Task
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -730,6 +744,14 @@ export function KanbanBoard({
         onClose={() => setIsAICreateOpen(false)}
         availableMembers={availableMembers}
         onTaskCreated={handleAITaskCreated}
+      />
+
+      {/* AI Assistant Chat Panel */}
+      <AIAssistantPanel
+        projectId={project.id}
+        projectName={project.name}
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
       />
     </div>
   );

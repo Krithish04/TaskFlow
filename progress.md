@@ -97,5 +97,8 @@
 - Built interactive `WeeklyReportDialog` on the PM dashboard (`src/app/dashboard/pm-projects.tsx`), featuring project status metric cards, full executive summary with markdown rendering, one-click clipboard copying, and report regeneration. Added 12 unit tests across `ai-weekly-report.test.ts` and `weekly-report-dialog.test.ts` (226 total tests passing). Addressed CodeRabbit review feedback with 0 findings on task files.
 - Next run needs to know: proceed to Task 20 (`POST /api/ai/assistant`: streaming chat panel answering from the project's real task data, read-only [review]).
 
-
-
+## Task 20: Streaming AI project assistant chat panel [review]
+- Implemented streaming `POST /api/ai/assistant` endpoint with bounded stream body parsing (32KB cap), Zod validation with differential length constraints for user and assistant messages, rate limiting, and project view permissions (Admin, PM, and User allowed per PRD).
+- Fed real-time project task data (status counts, overdue tasks, team workload distribution, and task inventory) into a strict read-only system prompt using Vercel AI SDK `streamText` and plain text streaming.
+- Built interactive `AIAssistantPanel` slide-over drawer on `/projects/[id]` with real-time stream chunk decoding, markdown formatting, quick suggestion prompts, clear chat, and abort controls, integrated into `KanbanBoard` header for all project members. Added 16 unit tests across `ai-assistant.test.ts` and `ai-assistant-panel.test.ts` (242 total tests passing). Completed 2 CodeRabbit review passes and addressed all findings.
+- Next run needs to know: proceed to Task 21 (README with setup, env vars, seed, and deployment notes [Vercel + MongoDB Atlas]).

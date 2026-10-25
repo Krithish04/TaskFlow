@@ -50,6 +50,9 @@ export function WeeklyReportDialog({
     setIsLoading(true);
     setError(null);
     setCopied(false);
+    setReport(null);
+    setStats(null);
+    setGeneratedAt(null);
 
     try {
       const res = await fetch("/api/ai/weekly-report", {
@@ -82,6 +85,9 @@ export function WeeklyReportDialog({
       setIsLoading(true);
       setError(null);
       setCopied(false);
+      setReport(null);
+      setStats(null);
+      setGeneratedAt(null);
 
       try {
         const res = await fetch("/api/ai/weekly-report", {

@@ -28,7 +28,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 17. [review] `POST /api/ai/create-task`: returns a draft task, UI shows it for confirmation before saving.
 - [x] 18. [review] `POST /api/ai/summarize-comments` and a Summarize button in the task drawer.
 - [x] 19. [review] `POST /api/ai/weekly-report` (PM/Admin only) and a report view on the PM dashboard.
-- [ ] 20. [review] `POST /api/ai/assistant`: streaming chat panel answering from the project's real task data, read-only.
+- [x] 20. [review] `POST /api/ai/assistant`: streaming chat panel answering from the project's real task data, read-only.
 
 ## Finish
 - [ ] 21. README with setup, env vars, seed, and deployment notes (Vercel + MongoDB Atlas).
