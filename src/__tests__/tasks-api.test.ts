@@ -394,6 +394,7 @@ describe("Tasks API - Permissions and Operations", () => {
       };
       vi.spyOn(Task, "findById").mockResolvedValueOnce(mockTask as never);
       vi.spyOn(Project, "findById").mockResolvedValueOnce(mockProjectDoc as never);
+      const updateManySpy = vi.spyOn(Task, "updateMany").mockResolvedValue({ acknowledged: true, modifiedCount: 1 } as never);
 
       const req = new NextRequest(`http://localhost:3000/api/tasks/${taskId}/move`, {
         method: "POST",
@@ -407,6 +408,7 @@ describe("Tasks API - Permissions and Operations", () => {
       expect(mockTask.status).toBe("in_progress");
       expect(mockTask.order).toBe(2);
       expect(mockTask.save).toHaveBeenCalled();
+      expect(updateManySpy).toHaveBeenCalled();
     });
 
     it("allows PM to move any task in the project", async () => {
@@ -423,6 +425,7 @@ describe("Tasks API - Permissions and Operations", () => {
       };
       vi.spyOn(Task, "findById").mockResolvedValueOnce(mockTask as never);
       vi.spyOn(Project, "findById").mockResolvedValueOnce(mockProjectDoc as never);
+      const updateManySpy = vi.spyOn(Task, "updateMany").mockResolvedValue({ acknowledged: true, modifiedCount: 1 } as never);
 
       const req = new NextRequest(`http://localhost:3000/api/tasks/${taskId}/move`, {
         method: "POST",
@@ -435,6 +438,7 @@ describe("Tasks API - Permissions and Operations", () => {
       expect(res.status).toBe(200);
       expect(mockTask.status).toBe("done");
       expect(mockTask.order).toBe(0);
+      expect(updateManySpy).toHaveBeenCalled();
     });
   });
 });

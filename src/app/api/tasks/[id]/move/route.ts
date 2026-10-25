@@ -67,6 +67,55 @@ export async function POST(
       );
     }
 
+    const prevStatus = task.status;
+    const prevOrder = task.order;
+
+    if (prevStatus === status) {
+      if (prevOrder < order) {
+        // Moved down: shift intervening items up
+        await Task.updateMany(
+          {
+            project: task.project,
+            status,
+            order: { $gt: prevOrder, $lte: order },
+            _id: { $ne: task._id },
+          },
+          { $inc: { order: -1 } }
+        );
+      } else if (prevOrder > order) {
+        // Moved up: shift intervening items down
+        await Task.updateMany(
+          {
+            project: task.project,
+            status,
+            order: { $gte: order, $lt: prevOrder },
+            _id: { $ne: task._id },
+          },
+          { $inc: { order: 1 } }
+        );
+      }
+    } else {
+      // Changed column: close gap in source, open slot in target
+      await Task.updateMany(
+        {
+          project: task.project,
+          status: prevStatus,
+          order: { $gt: prevOrder },
+          _id: { $ne: task._id },
+        },
+        { $inc: { order: -1 } }
+      );
+      await Task.updateMany(
+        {
+          project: task.project,
+          status,
+          order: { $gte: order },
+          _id: { $ne: task._id },
+        },
+        { $inc: { order: 1 } }
+      );
+    }
+
     task.status = status;
     task.order = order;
     await task.save();

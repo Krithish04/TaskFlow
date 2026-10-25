@@ -32,4 +32,4 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 
 ## Finish
 - [x] 21. README with setup, env vars, seed, and deployment notes (Vercel + MongoDB Atlas).
-- [ ] 22. Final pass: run lint, typecheck, tests, and `coderabbit review --plain` on the whole branch; fix real issues; ensure no secrets are committed.
+- [x] 22. Final pass: run lint, typecheck, tests, and `coderabbit review --plain` on the whole branch; fix real issues; ensure no secrets are committed.

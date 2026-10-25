@@ -24,8 +24,8 @@ interface LoginFormProps {
 const DEMO_ACCOUNTS = [
   { role: "Admin", email: "admin@example.com", badge: "All Access" },
   { role: "Project Manager", email: "pm@example.com", badge: "Project Lead" },
-  { role: "Member (Rahul)", email: "rahul@example.com", badge: "Team Member" },
-  { role: "Member (Priya)", email: "priya@example.com", badge: "Team Member" },
+  { role: "Member (Alice)", email: "alice@example.com", badge: "Team Member" },
+  { role: "Member (Bob)", email: "bob@example.com", badge: "Team Member" },
 ];
 
 export function LoginForm({ callbackUrl = "/dashboard", initialError }: LoginFormProps) {
