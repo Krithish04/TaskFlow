@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { WeeklyReportDialog } from "./weekly-report-dialog";
 
-export interface DashboardProjectMember {
+interface DashboardProjectMember {
   id: string;
   name: string;
   email: string;

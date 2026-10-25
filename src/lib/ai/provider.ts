@@ -5,8 +5,6 @@ import {
   requireAIRateLimit,
   resetAIRateLimits,
   cleanupExpiredEntries,
-  type RateLimitOptions,
-  type RateLimitResult,
 } from "./rate-limiter";
 
 /**
@@ -95,6 +93,4 @@ export {
   requireAIRateLimit,
   resetAIRateLimits,
   cleanupExpiredEntries,
-  type RateLimitOptions,
-  type RateLimitResult,
 };

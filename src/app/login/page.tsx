@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Sign in to your TaskFlow account to manage projects and tasks.",
 };
 
+export const instant = false;
+
 interface LoginPageProps {
   searchParams: Promise<{
     callbackUrl?: string;

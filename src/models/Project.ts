@@ -53,4 +53,3 @@ ProjectSchema.index({ members: 1 });
 export const Project: Model<IProject> =
   mongoose.models.Project || mongoose.model<IProject>("Project", ProjectSchema);
 
-export default Project;

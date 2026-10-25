@@ -40,6 +40,8 @@ export interface SerializedProject {
   createdAt: string;
 }
 
+export const instant = false;
+
 export default async function DashboardPage() {
   const session = await auth();
 

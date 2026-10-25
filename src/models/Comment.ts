@@ -39,4 +39,3 @@ export const Comment: Model<IComment> =
   mongoose.models.Comment ||
   mongoose.model<IComment>("Comment", CommentSchema);
 
-export default Comment;

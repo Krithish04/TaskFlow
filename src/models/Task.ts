@@ -82,4 +82,3 @@ TaskSchema.index({ assignee: 1, dueDate: 1 });
 export const Task: Model<ITask> =
   mongoose.models.Task || mongoose.model<ITask>("Task", TaskSchema);
 
-export default Task;

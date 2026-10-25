@@ -8,6 +8,8 @@ import { requireProjectAccess } from "@/lib/permissions";
 import { KanbanBoard } from "./kanban-board";
 import { KanbanProject, KanbanTask, KanbanUser } from "./types";
 
+export const instant = false;
+
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
 }
