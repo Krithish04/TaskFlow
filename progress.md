@@ -35,5 +35,7 @@
 ## Task 7: Login page
 - Built responsive login page (`src/app/login/page.tsx`) with automatic redirect to `/dashboard` for authenticated users and `callbackUrl` support.
 - Implemented `loginAction` server action (`src/app/login/actions.ts`) with credentials verification and error mapping, along with `LoginForm` (`src/app/login/login-form.tsx`) featuring demo account autofill buttons for Admin, PM, and User roles; added unit tests in `src/__tests__/login.test.ts`.
-- Next run needs to know: proceed to Task 8 (Users API [admin only] and Admin dashboard [user table, change role] [review]).
-
+## Task 8: Users API and Admin dashboard [review]
+- Implemented admin-only Users API (`GET /api/users`, `PATCH /api/users`, and `GET/PATCH /api/users/[id]`) with Zod validation, ObjectId verification, and guard against removing the last administrator.
+- Built Admin dashboard (`/dashboard`) with user metrics, all projects overview, and an interactive `UserTable` with search, role filtering, and dynamic role changes; addressed CodeRabbit review feedback (open redirect sanitization and last admin protection). Added unit tests in `src/__tests__/users-api.test.ts` and `src/__tests__/dashboard.test.ts`.
+- Next run needs to know: proceed to Task 9 (Projects API with Zod validation and permission checks, plus the PM dashboard project list [review]).

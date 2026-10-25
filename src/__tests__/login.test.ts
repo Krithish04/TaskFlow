@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { loginAction } from "@/app/login/actions";
+import { loginAction, sanitizeCallbackUrl } from "@/app/login/actions";
 import LoginPage from "@/app/login/page";
 import * as authModule from "@/auth";
 import { AuthError } from "next-auth";
@@ -11,6 +11,21 @@ vi.mock("next/navigation", () => ({
     throw error;
   }),
 }));
+
+describe("sanitizeCallbackUrl", () => {
+  it("allows valid relative paths", () => {
+    expect(sanitizeCallbackUrl("/dashboard")).toBe("/dashboard");
+    expect(sanitizeCallbackUrl("/projects/123")).toBe("/projects/123");
+  });
+
+  it("rejects absolute URLs, protocol-relative, and backslash paths", () => {
+    expect(sanitizeCallbackUrl("https://evil.com")).toBe("/dashboard");
+    expect(sanitizeCallbackUrl("//evil.com")).toBe("/dashboard");
+    expect(sanitizeCallbackUrl("/\\evil.com")).toBe("/dashboard");
+    expect(sanitizeCallbackUrl(null)).toBe("/dashboard");
+    expect(sanitizeCallbackUrl(123)).toBe("/dashboard");
+  });
+});
 
 describe("loginAction", () => {
   beforeEach(() => {

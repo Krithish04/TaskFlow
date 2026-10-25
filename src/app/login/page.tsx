@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LoginForm } from "./login-form";
+import { sanitizeCallbackUrl } from "./actions";
 
 export const metadata: Metadata = {
   title: "Sign In - TaskFlow",
@@ -23,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   const resolvedParams = (await searchParams) || {};
-  const callbackUrl = resolvedParams.callbackUrl || "/dashboard";
+  const callbackUrl = sanitizeCallbackUrl(resolvedParams.callbackUrl);
   const error = resolvedParams.error;
 
   return (

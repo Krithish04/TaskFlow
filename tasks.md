@@ -14,7 +14,7 @@ Work top to bottom. One task per iteration. Tasks marked `[review]` also get a C
 - [x] 7. Login page.
 
 ## Core features
-- [ ] 8. [review] Users API (admin only) and Admin dashboard (user table, change role).
+- [x] 8. [review] Users API (admin only) and Admin dashboard (user table, change role).
 - [ ] 9. [review] Projects API with Zod validation and permission checks, plus the PM dashboard project list.
 - [ ] 10. [review] Tasks API (list, create, edit, delete, move) with permission checks and tests.
 - [ ] 11. Kanban board page with dnd-kit: four columns, drag between and within columns, persists `status` and `order`.

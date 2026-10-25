@@ -8,13 +8,25 @@ export interface LoginState {
   error?: string;
 }
 
+export function sanitizeCallbackUrl(rawUrl: unknown): string {
+  if (
+    typeof rawUrl === "string" &&
+    rawUrl.startsWith("/") &&
+    !rawUrl.startsWith("//") &&
+    !rawUrl.startsWith("/\\")
+  ) {
+    return rawUrl;
+  }
+  return "/dashboard";
+}
+
 export async function loginAction(
   prevState: LoginState | undefined,
   formData: FormData
 ): Promise<LoginState | undefined> {
   const email = (formData.get("email") as string)?.trim();
   const password = formData.get("password") as string;
-  const callbackUrl = (formData.get("callbackUrl") as string) || "/dashboard";
+  const callbackUrl = sanitizeCallbackUrl(formData.get("callbackUrl"));
 
   if (!email || !password) {
     return { error: "Please enter both email and password." };
