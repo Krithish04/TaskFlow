@@ -166,6 +166,23 @@ export function canCommentOnTask(
 }
 
 /**
+ * Delete a chat message:
+ * - Author can delete their own message.
+ * - PM (owner of that project) can delete any message in their project.
+ * - Admin can delete any message.
+ */
+export function canDeleteMessage(
+  user: AuthUser,
+  message: { author: unknown },
+  project: { owner: unknown }
+): boolean {
+  if (user.role === "admin") return true;
+  if (matchesId(message.author, user.id)) return true;
+  if (user.role === "pm" && matchesId(project.owner, user.id)) return true;
+  return false;
+}
+
+/**
  * Use AI features:
  * Admin: all, PM: all, User: summaries and assistant only.
  */

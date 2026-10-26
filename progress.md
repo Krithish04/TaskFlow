@@ -65,3 +65,17 @@
 - Verified all quality gates: `npm run typecheck` (0 errors), `npm run lint` (0 errors), `npm test` (37/37 pass), and `npm run build` (all 21 App Router routes compile cleanly).
 - Next run (Task 30): [review] Message model and API: `GET` with `after` and `limit`, `POST` with fileIds (files must belong to the same project and not already be attached), `DELETE` with the author/PM/Admin rules. ProjectReadState and an endpoint to mark read. Tests including isolation.
 
+## Task 30: [review] Message model, API & read state
+- Created `src/models/Message.ts` with fields `project`, `author`, `body` (max 4000 chars, trimmed), `attachments` (File refs, max 5), `deletedAt`, and indexes for chronological `after` queries.
+- Created `src/models/ProjectReadState.ts` with `user`, `project`, `lastReadAt`, and unique compound index `{ user: 1, project: 1 }`. Re-exported both in `src/models/index.ts`.
+- Added `canDeleteMessage` helper to `src/lib/permissions.ts` enforcing: author can delete own message, PM owner can delete messages in their project, and Admin can delete any message.
+- Implemented API route handlers with strict isolation & anti-probing:
+  - `GET /api/projects/[id]/messages`: checks project view access (404 on access denial), supports `after` ISO timestamp filtering and bounded `limit` (default 50, max 100), populates author and active attachments.
+  - `POST /api/projects/[id]/messages`: enforces project membership, validates body and max 5 attachments, checks that attached files belong to the same project and are not already attached (`messageId != null`), updates attached files with `messageId`, updates sender's `ProjectReadState`, and returns `201 Created`.
+  - `DELETE /api/messages/[id]`: derives project association from stored message record (never client input), verifies project access with anti-probing 404, enforces `canDeleteMessage`, soft-deletes message, and releases file `messageId` attachments.
+  - `POST & GET /api/projects/[id]/messages/read` and alias `/api/projects/[id]/read`: updates `lastReadAt` timestamp on POST, and returns `{ lastReadAt, unreadCount }` on GET.
+- Added comprehensive unit tests in `src/__tests__/messages.test.ts` covering message validation, attachment eligibility, cross-project isolation, deletion permissions, timestamp filtering with `after`, and unread count computation. All 48 tests across 16 suites pass.
+- Ran CodeRabbit review and addressed findings: refactored `DELETE /api/messages/[id]` to utilize the centralized `canDeleteMessage` helper.
+- Verified all quality gates: `npm test` (48/48 pass), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 25 App Router routes compile cleanly).
+- Next run (Task 31): Chat tab UI: message list, composer with attach button, drag and drop and paste, upload progress, image previews, file cards with size and download, 3 s polling that pauses when the tab is hidden, auto-scroll that does not jump while reading older messages, unread badge on the tab, empty state, mobile layout.
+
