@@ -2,8 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Types } from "mongoose";
 import { auth } from "@/auth";
 import { requireProjectAccess } from "@/lib/permissions";
-import { EmptyState } from "@/components/ui/empty-state";
-import { BarChart3 } from "lucide-react";
+import { ProjectAnalyticsView } from "@/components/analytics/project-analytics-view";
 
 interface AnalyticsPageProps {
   params: Promise<{ id: string }>;
@@ -21,18 +20,23 @@ export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
     redirect(`/login?callbackUrl=/projects/${id}/analytics`);
   }
 
+  let projectKey = "TASK";
+  let projectColor = "indigo";
+
   try {
-    await requireProjectAccess(id, "view");
+    const { project } = await requireProjectAccess(id, "view");
+    projectKey = project.key || "TASK";
+    projectColor = project.color || "indigo";
   } catch {
     notFound();
   }
 
   return (
-    <div className="py-8">
-      <EmptyState
-        icon={BarChart3}
-        title="Project Analytics"
-        description="Comprehensive project health, burndown charts, workload distribution, and velocity KPIs."
+    <div className="py-4 sm:py-6">
+      <ProjectAnalyticsView
+        projectId={id}
+        projectKey={projectKey}
+        projectColor={projectColor}
       />
     </div>
   );

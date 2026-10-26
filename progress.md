@@ -135,5 +135,23 @@
 - Ran CodeRabbit review (`coderabbit review --uncommitted --include-untracked`) with 0 new findings.
 - Next run (Task 34): Project Analytics tab with Recharts: KPI cards, status donut, created vs completed, burndown, workload, priority, overdue list, range selector, empty states, text summaries.
 
+## Task 34: Project Analytics tab with Recharts
+- Installed `recharts` and created `ProjectAnalyticsView` in `src/components/analytics/project-analytics-view.tsx` with hydration-safe `useSyncExternalStore` mount handling.
+- Implemented comprehensive visualizations and interactive controls:
+  - Top KPI cards: Total Tasks, Completed Tasks, Completion Rate %, Avg Cycle Time (days), and Overdue Tasks (highlighted with destructive border/text when > 0).
+  - Time range selector pills: `7 Days`, `30 Days`, `90 Days`, with live reload button and range-aware KPI deltas.
+  - Task Burndown chart: Recharts `AreaChart` with gradient fill, remaining open tasks curve, and ideal guideline over time.
+  - Status Distribution donut: Recharts `PieChart` with centered total task count and legend pills.
+  - Created vs Completed velocity: Recharts `BarChart` comparing weekly task volume.
+  - Priority Breakdown: Stacked distribution bars and count metrics for low, medium, and high priority.
+  - Team Workload by Status: Responsive horizontal stacked bars with assignee avatars and count breakdown across all project members.
+  - Overdue Tasks list: Displays task ID (`KEY-12`), title, status badge, priority badge, assignee avatar, and urgency badge (`X days overdue`).
+  - Integrated empty states and accessible text summaries (`sr-only` and visible text summaries) on every chart component.
+- Updated `src/app/projects/[id]/analytics/page.tsx` with project authorization check via `requireProjectAccess(id, "view")` and project metadata.
+- Tested responsive design and interactions with browser subagent at 1280px and 375px in both light and dark modes (verified charts, range switches, and zero layout overflow).
+- Quality gates passed: `npm test` (66/66 passed), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 26 App Router routes compile cleanly).
+- Next run (Task 35): [review] Global analytics page `/dashboard/analytics` (Admin: all projects, PM: own projects) with project health table, and personal stats on the User dashboard.
+
+
 
 
