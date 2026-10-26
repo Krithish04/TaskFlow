@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { TaskStatus, TaskPriority } from "@/models/Task";
+import type { TaskStatus, TaskPriority } from "@/models/Task";
 import { KanbanTask, KanbanUser } from "./types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

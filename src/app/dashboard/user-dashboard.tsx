@@ -23,6 +23,8 @@ import {
 
 export interface UserTask {
   id: string;
+  number?: number;
+  projectKey?: string;
   projectId: string;
   projectName: string;
   title: string;
@@ -36,8 +38,10 @@ export interface UserTask {
 export interface UserComment {
   id: string;
   taskId: string;
+  taskNumber?: number;
   taskTitle: string;
   projectId: string;
+  projectKey?: string;
   projectName: string;
   authorName: string;
   authorRole: string;
@@ -48,6 +52,8 @@ export interface UserComment {
 export interface UserProjectItem {
   id: string;
   name: string;
+  key?: string;
+  color?: string;
   description: string;
   status: "active" | "archived" | "completed";
   ownerName: string;
@@ -198,6 +204,11 @@ export function UserDashboard({
                   href={`/projects/${t.projectId}`}
                   className="inline-flex items-center gap-1.5 rounded-md bg-background px-2.5 py-1 text-xs font-medium text-foreground border border-border shadow-2xs hover:bg-muted transition-colors"
                 >
+                  {t.projectKey && t.number !== undefined && (
+                    <span className="font-mono text-[10px] text-primary font-semibold">
+                      {t.projectKey}-{t.number}
+                    </span>
+                  )}
                   <span>{t.title}</span>
                   <span className="text-[10px] text-muted-foreground">({t.projectName})</span>
                   <ArrowRight className="size-3 text-muted-foreground" />
@@ -322,6 +333,15 @@ export function UserDashboard({
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
+                            {task.projectKey && task.number !== undefined && (
+                              <Badge
+                                variant="outline"
+                                size="sm"
+                                className="font-mono text-[10px] tabular-nums font-semibold bg-muted/50"
+                              >
+                                {task.projectKey}-{task.number}
+                              </Badge>
+                            )}
                             <Badge variant={priorityVariant} size="sm" dot>
                               {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                             </Badge>
@@ -453,6 +473,11 @@ export function UserDashboard({
                         href={`/projects/${comment.projectId}`}
                         className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 truncate"
                       >
+                        {comment.projectKey && comment.taskNumber !== undefined && (
+                          <span className="font-mono text-[10px] font-semibold text-primary shrink-0">
+                            {comment.projectKey}-{comment.taskNumber}
+                          </span>
+                        )}
                         <span className="font-medium truncate">{comment.taskTitle}</span>
                         <span className="text-[10px] opacity-75 shrink-0">
                           ({comment.projectName})

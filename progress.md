@@ -23,3 +23,11 @@
 - CodeRabbit: `coderabbit review --uncommitted --include-untracked` was launched, but failed due to WebSocket connection abort; proceeding per prompt rules.
 - Verified `npm run lint`, `npm run typecheck`, and `npm run build` all pass with 0 errors.
 - Next run (Task 26): [review] Workspace layout at `/projects/[id]` with persistent project header and tabs (Overview, Board, Chat, Files, Analytics, Members). Move Kanban to `/board`. Redirect the bare route to overview. Return 404 for projects the user cannot access. Build the `/projects` card grid and a project switcher in the sidebar. Show task ids as `KEY-12` everywhere. Project create and edit dialogs get color and key.
+
+## Task 26: [review] Workspace layout at `/projects/[id]` and project features
+- Built persistent workspace layout at `/projects/[id]` with `WorkspaceHeader` (color accent, key badge, status, and navigation tabs: Overview, Board, Chat, Files, Analytics, Members). Returns 404 for projects the user cannot access, and restricts the Members tab to PM and Admin. Moved Kanban to `/board` and redirected bare route `/projects/[id]` to `/projects/[id]/overview`.
+- Built `/projects` card grid with search, filter, "+ New Project" button, and responsive cards (color bar, key badge, progress bar, overdue badge, member avatar stack). Added Project Switcher dropdown in the AppShell sidebar.
+- Formatted task IDs as `KEY-12` across Kanban cards, task drawer, and dashboards. Created shared `ProjectDialog` with 8-color palette selector and 2-5 letter key derivation for creating/editing projects on `/projects` and PM dashboard.
+- Ran CodeRabbit review and addressed security and correctness findings (gated availableMembers query to authorized creators/managers and aligned query with schema). Verified `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` all pass with 0 errors.
+- Next run (Task 27): Overview tab: description, progress, upcoming due, members, and a recent activity feed (latest tasks, messages and files of this project only).
+

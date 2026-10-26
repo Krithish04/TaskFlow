@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { TaskStatus, TaskPriority } from "@/models/Task";
+import type { TaskStatus, TaskPriority } from "@/models/Task";
 import { KanbanTask, KanbanUser } from "./types";
 import { TaskComments } from "./task-comments";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ interface TaskDrawerProps {
   onClose: () => void;
   isOwnerOrAdmin: boolean;
   availableMembers: KanbanUser[];
+  projectKey?: string;
   onTaskUpdated: (updatedTask: KanbanTask) => void;
   onTaskDeleted: (taskId: string) => void;
 }
@@ -66,6 +67,7 @@ function TaskDrawerContent({
   onClose,
   isOwnerOrAdmin,
   availableMembers,
+  projectKey,
   onTaskUpdated,
   onTaskDeleted,
 }: TaskDrawerProps & { task: KanbanTask }) {
@@ -186,7 +188,12 @@ function TaskDrawerContent({
         <div className="w-screen max-w-md bg-background border-l border-border shadow-2xl flex flex-col h-full animate-in slide-in-from-right duration-200">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {projectKey && task.number !== undefined && (
+                <span className="font-mono text-xs font-bold text-foreground bg-muted px-2 py-0.5 rounded border border-border tracking-wider">
+                  {projectKey}-{task.number}
+                </span>
+              )}
               <Badge
                 variant={
                   task.priority === "high"

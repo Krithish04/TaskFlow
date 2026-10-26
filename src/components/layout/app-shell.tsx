@@ -7,11 +7,13 @@ import { signOut } from "next-auth/react";
 import {
   CheckSquare,
   LayoutDashboard,
+  FolderKanban,
   LogOut,
   Menu,
   X,
   Search,
   ChevronRight,
+  ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -56,13 +58,18 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [switcherOpen, setSwitcherOpen] = React.useState(false);
 
   // Close mobile sidebar on route change during render
   const [prevPathname, setPrevPathname] = React.useState(pathname);
   if (prevPathname !== pathname) {
     setPrevPathname(pathname);
     setMobileOpen(false);
+    setSwitcherOpen(false);
   }
+
+  const currentProjectId = pathname.match(/^\/projects\/([a-f0-9]{24})/)?.[1];
+  const activeProject = projects.find((p) => p.id === currentProjectId);
 
   const initials = (user.name || user.email || "U")
     .split(" ")
@@ -125,27 +132,120 @@ export function AppShell({
             <LayoutDashboard className="size-4 shrink-0" />
             <span>Dashboard</span>
           </Link>
+
+          <Link
+            href="/projects"
+            className={cn(
+              "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm font-medium transition-colors",
+              pathname === "/projects"
+                ? "bg-accent text-accent-foreground font-semibold"
+                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+            )}
+          >
+            <FolderKanban className="size-4 shrink-0" />
+            <span>Projects</span>
+          </Link>
         </div>
 
-        {/* Projects List */}
+        {/* Projects & Project Switcher */}
         {projects.length > 0 && (
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex items-center justify-between px-2 pb-1">
               <span className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                Projects
+                Workspace
               </span>
               <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
                 {projects.length}
               </span>
             </div>
-            <div className="space-y-0.5 max-h-64 overflow-y-auto no-scrollbar pr-1">
+
+            {/* Project Switcher Dropdown */}
+            <div className="relative px-1">
+              <button
+                type="button"
+                onClick={() => setSwitcherOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 text-left text-xs transition-colors shadow-xs"
+                aria-label="Switch project"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className={cn(
+                      "size-2.5 rounded-full shrink-0",
+                      getProjectColor(activeProject?.color).dotClass
+                    )}
+                  />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground truncate leading-tight">
+                      {activeProject ? activeProject.name : "Switch Project..."}
+                    </p>
+                    {activeProject?.key && (
+                      <p className="text-[10px] text-muted-foreground font-mono leading-tight">
+                        {activeProject.key}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
+              </button>
+
+              {switcherOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setSwitcherOpen(false)}
+                  />
+                  <div className="absolute top-full left-1 right-1 z-40 mt-1 max-h-56 overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg space-y-0.5">
+                    {projects.map((p) => {
+                      const isSelected = p.id === currentProjectId;
+                      const c = getProjectColor(p.color);
+                      return (
+                        <Link
+                          key={p.id}
+                          href={`/projects/${p.id}/overview`}
+                          onClick={() => setSwitcherOpen(false)}
+                          className={cn(
+                            "flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
+                            isSelected
+                              ? "bg-accent text-accent-foreground font-semibold"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={cn("size-2 rounded-full shrink-0", c.dotClass)} />
+                            <span className="truncate">{p.name}</span>
+                          </div>
+                          {p.key && (
+                            <span className="text-[10px] font-mono text-muted-foreground">
+                              {p.key}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                    <div className="border-t border-border pt-1 mt-1">
+                      <Link
+                        href="/projects"
+                        onClick={() => setSwitcherOpen(false)}
+                        className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-primary font-medium hover:bg-muted"
+                      >
+                        <FolderKanban className="size-3.5" />
+                        <span>All Projects</span>
+                      </Link>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Project List */}
+            <div className="space-y-0.5 max-h-48 overflow-y-auto no-scrollbar pr-1 pt-1">
               {projects.map((p) => {
-                const isCurrent = pathname.startsWith(`/projects/${p.id}`);
+                const isCurrent = currentProjectId === p.id;
                 const colorConfig = getProjectColor(p.color);
                 return (
                   <Link
                     key={p.id}
-                    href={`/projects/${p.id}`}
+                    href={`/projects/${p.id}/overview`}
                     className={cn(
                       "flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors group",
                       isCurrent
@@ -156,7 +256,8 @@ export function AppShell({
                     <span
                       className={cn(
                         "size-2 rounded-full shrink-0 transition-transform group-hover:scale-125",
-                        colorConfig.dotClass
+                        colorConfig.dotClass,
+                        isCurrent && "ring-2 ring-primary ring-offset-1"
                       )}
                       aria-hidden="true"
                     />

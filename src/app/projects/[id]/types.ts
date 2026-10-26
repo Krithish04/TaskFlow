@@ -1,4 +1,4 @@
-import { TaskStatus, TaskPriority } from "@/models/Task";
+import type { TaskStatus, TaskPriority } from "@/models/Task";
 
 export interface KanbanUser {
   id: string;
@@ -10,6 +10,7 @@ export interface KanbanUser {
 export interface KanbanTask {
   id: string;
   projectId: string;
+  number?: number;
   title: string;
   description: string;
   status: TaskStatus;
@@ -17,6 +18,7 @@ export interface KanbanTask {
   order: number;
   assignee?: KanbanUser | null;
   dueDate?: string | null;
+  completedAt?: string | null;
   createdBy?: KanbanUser | null;
   createdAt: string;
 }
@@ -40,6 +42,8 @@ export interface KanbanProject {
   name: string;
   description: string;
   status: "active" | "archived" | "completed";
+  color?: string;
+  key?: string;
   owner: KanbanUser;
   members: KanbanUser[];
   createdAt: string;

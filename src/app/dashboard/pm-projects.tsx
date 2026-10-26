@@ -2,10 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ProjectStatus } from "@/models/Project";
+import type { ProjectStatus } from "@/lib/project-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarStack } from "@/components/ui/avatar";
@@ -18,15 +17,16 @@ import {
   CheckCircle2,
   Clock,
   ArrowRight,
-  Loader2,
   Trash2,
   Edit2,
-  X,
   AlertCircle,
   Layers,
   FileText,
 } from "lucide-react";
 import { WeeklyReportDialog } from "./weekly-report-dialog";
+
+import { ProjectDialog, type ProjectFormData } from "@/components/projects/project-dialog";
+import { getProjectColor } from "@/lib/design-tokens";
 
 interface DashboardProjectMember {
   id: string;
@@ -38,6 +38,8 @@ interface DashboardProjectMember {
 export interface DashboardProject {
   id: string;
   name: string;
+  key?: string;
+  color?: string;
   description: string;
   status: ProjectStatus;
   owner: {
@@ -71,7 +73,6 @@ export function PMProjects({
   const [searchQuery, setSearchQuery] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [isCreating, setIsCreating] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [editingProject, setEditingProject] = React.useState<DashboardProject | null>(null);
   const [selectedReportProject, setSelectedReportProject] = React.useState<DashboardProject | null>(null);
   const [statusMessage, setStatusMessage] = React.useState<{
@@ -79,147 +80,101 @@ export function PMProjects({
     text: string;
   } | null>(null);
 
-  // Form states
-  const [formData, setFormData] = React.useState<{
-    name: string;
-    description: string;
-    status: ProjectStatus;
-    memberIds: string[];
-  }>({
-    name: "",
-    description: "",
-    status: "active",
-    memberIds: [],
-  });
-
   const openCreateModal = () => {
     setEditingProject(null);
-    setFormData({
-      name: "",
-      description: "",
-      status: "active",
-      memberIds: [],
-    });
     setIsCreating(true);
     setStatusMessage(null);
   };
 
   const openEditModal = (project: DashboardProject) => {
     setEditingProject(project);
-    setFormData({
-      name: project.name,
-      description: project.description,
-      status: project.status,
-      memberIds: project.members.map((m) => m.id),
-    });
     setIsCreating(true);
     setStatusMessage(null);
   };
 
-  const handleMemberToggle = (userId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      memberIds: prev.memberIds.includes(userId)
-        ? prev.memberIds.filter((id) => id !== userId)
-        : [...prev.memberIds, userId],
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return;
-
-    setIsSubmitting(true);
-    setStatusMessage(null);
-
-    try {
-      if (editingProject) {
-        // PATCH existing project
-        const res = await fetch(`/api/projects/${editingProject.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            status: formData.status,
-            members: formData.memberIds,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to update project");
-
-        setProjects((prev) =>
-          prev.map((p) =>
-            p.id === editingProject.id
-              ? {
-                  ...p,
-                  name: data.project.name,
-                  description: data.project.description,
-                  status: data.project.status,
-                  members: ((data.project.members || []) as { _id?: unknown; id?: string; name: string; email: string; role: string }[]).map((m) => ({
-                    id: m._id?.toString() || m.id || "",
-                    name: m.name,
-                    email: m.email,
-                    role: m.role,
-                  })),
-                }
-              : p
-          )
-        );
-        setStatusMessage({
-          type: "success",
-          text: `Project "${data.project.name}" updated successfully.`,
-        });
-      } else {
-        // POST new project
-        const res = await fetch("/api/projects", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: formData.name.trim(),
-            description: formData.description.trim(),
-            status: formData.status,
-            members: formData.memberIds,
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to create project");
-
-        const newProject: DashboardProject = {
-          id: data.project._id?.toString() || data.project.id,
-          name: data.project.name,
-          description: data.project.description,
-          status: data.project.status,
-          owner: {
-            id: data.project.owner?._id?.toString() || data.project.owner?.id,
-            name: data.project.owner?.name || "You",
-            email: data.project.owner?.email || "",
-          },
-          members: ((data.project.members || []) as { _id?: unknown; id?: string; name: string; email: string; role: string }[]).map((m) => ({
-            id: m._id?.toString() || m.id || "",
-            name: m.name,
-            email: m.email,
-            role: m.role,
-          })),
-          createdAt: data.project.createdAt || new Date().toISOString(),
-        };
-
-        setProjects((prev) => [newProject, ...prev]);
-        setStatusMessage({
-          type: "success",
-          text: `Project "${newProject.name}" created successfully.`,
-        });
-      }
-
-      setIsCreating(false);
-      setEditingProject(null);
-    } catch (err) {
-      setStatusMessage({
-        type: "error",
-        text: err instanceof Error ? err.message : "Action failed",
+  const handleDialogSubmit = async (data: ProjectFormData) => {
+    if (editingProject) {
+      const res = await fetch(`/api/projects/${editingProject.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name.trim(),
+          key: data.key.trim(),
+          color: data.color,
+          description: data.description.trim(),
+          status: data.status,
+          members: data.memberIds,
+        }),
       });
-    } finally {
-      setIsSubmitting(false);
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "Failed to update project");
+
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === editingProject.id
+            ? {
+                ...p,
+                name: resData.project.name,
+                key: resData.project.key,
+                color: resData.project.color,
+                description: resData.project.description,
+                status: resData.project.status,
+                members: ((resData.project.members || []) as { _id?: unknown; id?: string; name: string; email: string; role: string }[]).map((m) => ({
+                  id: m._id?.toString() || m.id || "",
+                  name: m.name,
+                  email: m.email,
+                  role: m.role,
+                })),
+              }
+            : p
+        )
+      );
+      setStatusMessage({
+        type: "success",
+        text: `Project "${resData.project.name}" updated successfully.`,
+      });
+    } else {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.name.trim(),
+          key: data.key.trim(),
+          color: data.color,
+          description: data.description.trim(),
+          status: data.status,
+          members: data.memberIds,
+        }),
+      });
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || "Failed to create project");
+
+      const newProject: DashboardProject = {
+        id: resData.project._id?.toString() || resData.project.id,
+        name: resData.project.name,
+        key: resData.project.key,
+        color: resData.project.color,
+        description: resData.project.description,
+        status: resData.project.status,
+        owner: {
+          id: resData.project.owner?._id?.toString() || resData.project.owner?.id,
+          name: resData.project.owner?.name || "You",
+          email: resData.project.owner?.email || "",
+        },
+        members: ((resData.project.members || []) as { _id?: unknown; id?: string; name: string; email: string; role: string }[]).map((m) => ({
+          id: m._id?.toString() || m.id || "",
+          name: m.name,
+          email: m.email,
+          role: m.role,
+        })),
+        createdAt: resData.project.createdAt || new Date().toISOString(),
+      };
+
+      setProjects((prev) => [newProject, ...prev]);
+      setStatusMessage({
+        type: "success",
+        text: `Project "${newProject.name}" created successfully.`,
+      });
     }
   };
 
@@ -378,142 +333,39 @@ export function PMProjects({
         </Button>
       </div>
 
-      {/* Creation / Edit Modal/Card */}
-      {isCreating && (
-        <Card className="border-primary/30 shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between pb-3">
-            <div>
-              <CardTitle className="text-lg">
-                {editingProject ? "Edit Project" : "Create New Project"}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {editingProject
-                  ? "Update project details, status, or member assignments."
-                  : "Set up a new workspace for your team and assign initial members."}
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsCreating(false)}
-              className="size-8 p-0"
-            >
-              <X className="size-4" />
-            </Button>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="projectName">Project Name *</Label>
-                <Input
-                  id="projectName"
-                  required
-                  placeholder="e.g. Website Redesign Q4"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
-                  }
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="projectDescription">Description</Label>
-                <textarea
-                  id="projectDescription"
-                  rows={3}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-                  placeholder="Goals, deliverables, or project scope..."
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, description: e.target.value }))
-                  }
-                  disabled={isSubmitting}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="projectStatus">Status</Label>
-                <select
-                  id="projectStatus"
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      status: e.target.value as ProjectStatus,
-                    }))
-                  }
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  disabled={isSubmitting}
-                >
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Team Members</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border border-border rounded-lg bg-muted/20">
-                  {availableUsers
-                    .filter((u) => u.id !== currentUserId)
-                    .map((user) => {
-                      const isSelected = formData.memberIds.includes(user.id);
-                      return (
-                        <label
-                          key={user.id}
-                          className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer text-xs transition-colors ${
-                            isSelected
-                              ? "bg-primary/10 border-primary/40 text-foreground"
-                              : "bg-background border-border hover:bg-muted/40"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleMemberToggle(user.id)}
-                            className="rounded border-input text-primary focus:ring-primary"
-                          />
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">{user.name}</p>
-                            {user.email ? (
-                              <p className="text-[11px] text-muted-foreground truncate">
-                                {user.email}
-                              </p>
-                            ) : null}
-                          </div>
-                        </label>
-                      );
-                    })}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreating(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 size-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : editingProject ? (
-                    "Save Changes"
-                  ) : (
-                    "Create Project"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </form>
-        </Card>
-      )}
+      {/* Project Dialog */}
+      <ProjectDialog
+        isOpen={isCreating}
+        onClose={() => {
+          setIsCreating(false);
+          setEditingProject(null);
+        }}
+        onSubmit={handleDialogSubmit}
+        initialData={
+          editingProject
+            ? {
+                name: editingProject.name,
+                key: editingProject.key || "",
+                color: editingProject.color || "blue",
+                description: editingProject.description,
+                status: editingProject.status,
+                memberIds: editingProject.members.map((m) => m.id),
+              }
+            : null
+        }
+        availableMembers={availableUsers.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email || "",
+          role: u.role,
+        }))}
+        title={editingProject ? "Edit Project" : "Create New Project"}
+        description={
+          editingProject
+            ? "Update project details, key, color theme, and team members."
+            : "Set up a new workspace for your team and assign initial members."
+        }
+      />
 
       {/* Projects Grid */}
       {filteredProjects.length === 0 ? (
@@ -531,26 +383,42 @@ export function PMProjects({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.map((project) => {
             const isOwner = project.owner.id === currentUserId;
+            const palette = getProjectColor(project.color);
 
             return (
               <Card
                 key={project.id}
-                className="flex flex-col justify-between shadow-xs hover:border-primary/40 transition-colors"
+                className="flex flex-col justify-between shadow-xs hover:border-primary/40 transition-colors overflow-hidden relative"
               >
+                <div
+                  className="h-1.5 w-full shrink-0"
+                  style={{ backgroundColor: palette.hex }}
+                />
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
-                    <Badge
-                      variant={
-                        project.status === "active"
-                          ? "status-done"
-                          : project.status === "completed"
-                          ? "status-in-progress"
-                          : "secondary"
-                      }
-                      size="sm"
-                    >
-                      {project.status}
-                    </Badge>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {project.key && (
+                        <Badge
+                          variant="outline"
+                          size="sm"
+                          className="font-mono text-[10px] font-semibold bg-muted/60"
+                        >
+                          {project.key}
+                        </Badge>
+                      )}
+                      <Badge
+                        variant={
+                          project.status === "active"
+                            ? "status-done"
+                            : project.status === "completed"
+                            ? "status-in-progress"
+                            : "secondary"
+                        }
+                        size="sm"
+                      >
+                        {project.status}
+                      </Badge>
+                    </div>
                     <Badge
                       variant={isOwner ? "default" : "outline"}
                       size="sm"

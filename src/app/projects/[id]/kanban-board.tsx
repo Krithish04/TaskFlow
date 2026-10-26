@@ -13,7 +13,7 @@ import {
   DragEndEvent,
   closestCorners,
 } from "@dnd-kit/core";
-import { TaskStatus, TaskPriority } from "@/models/Task";
+import type { TaskStatus, TaskPriority } from "@/models/Task";
 import { KanbanProject, KanbanTask, KanbanUser, COLUMNS } from "./types";
 import { KanbanColumn } from "./kanban-column";
 import { KanbanCard } from "./kanban-card";
@@ -699,6 +699,7 @@ export function KanbanBoard({
               badgeClass={col.badgeClass}
               tasks={columnsTasks[col.id] || []}
               currentUserId={currentUserId}
+              projectKey={project.key}
               onTaskClick={handleSelectTask}
             />
           ))}
@@ -710,6 +711,7 @@ export function KanbanBoard({
             <KanbanCard
               task={activeTask}
               currentUserId={currentUserId}
+              projectKey={project.key}
               isOverlay
             />
           ) : null}
@@ -723,6 +725,7 @@ export function KanbanBoard({
         onClose={() => setIsDrawerOpen(false)}
         isOwnerOrAdmin={isOwnerOrAdmin}
         availableMembers={availableMembers}
+        projectKey={project.key}
         onTaskUpdated={handleTaskUpdated}
         onTaskDeleted={handleTaskDeleted}
       />

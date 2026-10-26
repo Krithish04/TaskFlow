@@ -1,4 +1,4 @@
-import { TaskStatus, TaskPriority } from "@/models/Task";
+import type { TaskStatus, TaskPriority } from "@/models/Task";
 
 /**
  * TaskFlow Design Tokens & Constants

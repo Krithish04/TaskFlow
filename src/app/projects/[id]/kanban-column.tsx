@@ -6,7 +6,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { TaskStatus } from "@/models/Task";
+import type { TaskStatus } from "@/models/Task";
 import { KanbanTask } from "./types";
 import { KanbanCard } from "./kanban-card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ interface KanbanColumnProps {
   badgeClass: string;
   tasks: KanbanTask[];
   currentUserId: string;
+  projectKey?: string;
   onTaskClick?: (task: KanbanTask) => void;
 }
 
@@ -45,6 +46,7 @@ export function KanbanColumn({
   accentClass,
   tasks,
   currentUserId,
+  projectKey,
   onTaskClick,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
@@ -89,6 +91,7 @@ export function KanbanColumn({
               key={task.id}
               task={task}
               currentUserId={currentUserId}
+              projectKey={projectKey}
               onClick={onTaskClick}
             />
           ))}

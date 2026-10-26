@@ -32,6 +32,8 @@ import {
 export interface SerializedProject {
   id: string;
   name: string;
+  key?: string;
+  color?: string;
   description: string;
   status: "active" | "archived" | "completed";
   ownerName: string;
@@ -83,6 +85,8 @@ export default async function DashboardPage() {
       return {
         id: p._id.toString(),
         name: p.name,
+        key: p.key,
+        color: p.color,
         description: p.description || "",
         status: p.status,
         ownerName: ownerObj?.name || "Unassigned",
@@ -96,7 +100,12 @@ export default async function DashboardPage() {
     const pmCount = users.filter((u) => u.role === "pm").length;
     const memberCount = users.filter((u) => u.role === "user").length;
     const activeProjectsCount = projects.filter((p) => p.status === "active").length;
-    const sidebarProjects = projects.map((p) => ({ id: p.id, name: p.name }));
+    const sidebarProjects = projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      key: p.key,
+      color: p.color,
+    }));
 
     return (
       <AppShell
@@ -328,6 +337,8 @@ export default async function DashboardPage() {
       return {
         id: p._id.toString(),
         name: p.name,
+        key: p.key,
+        color: p.color,
         description: p.description || "",
         status: p.status,
         owner: {
@@ -350,7 +361,12 @@ export default async function DashboardPage() {
       name: u.name,
     }));
 
-    const sidebarProjects = pmProjects.map((p) => ({ id: p.id, name: p.name }));
+    const sidebarProjects = pmProjects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      key: p.key,
+      color: p.color,
+    }));
 
     return (
       <AppShell
@@ -402,6 +418,8 @@ export default async function DashboardPage() {
     return {
       id: p._id.toString(),
       name: p.name,
+      key: p.key,
+      color: p.color,
       description: p.description || "",
       status: p.status,
       ownerName: ownerObj?.name || "Unassigned",
@@ -414,14 +432,16 @@ export default async function DashboardPage() {
     assignee: session.user.id,
     project: { $in: projectIds },
   })
-    .populate("project", "name")
+    .populate("project", "name key")
     .sort({ dueDate: 1, createdAt: -1 })
     .lean();
 
   const assignedTasks: UserTask[] = assignedTasksDoc.map((t) => {
-    const projectObj = t.project as unknown as { _id?: unknown; name?: string } | null;
+    const projectObj = t.project as unknown as { _id?: unknown; name?: string; key?: string } | null;
     return {
       id: t._id.toString(),
+      number: t.number,
+      projectKey: projectObj?.key || "TF",
       projectId: projectObj?._id?.toString() || (t.project ? t.project.toString() : ""),
       projectName: projectObj?.name || "Project",
       title: t.title,
@@ -444,8 +464,8 @@ export default async function DashboardPage() {
     .populate("author", "name email role")
     .populate({
       path: "task",
-      select: "title project",
-      populate: { path: "project", select: "name" },
+      select: "title number project",
+      populate: { path: "project", select: "name key" },
     })
     .sort({ createdAt: -1 })
     .limit(10)
@@ -455,17 +475,20 @@ export default async function DashboardPage() {
     const authorObj = c.author as unknown as { name?: string; role?: string } | null;
     const taskObj = c.task as unknown as {
       _id?: unknown;
+      number?: number;
       title?: string;
-      project?: { _id?: unknown; name?: string };
+      project?: { _id?: unknown; name?: string; key?: string };
     } | null;
 
     return {
       id: c._id.toString(),
       taskId: taskObj?._id?.toString() || (c.task ? c.task.toString() : ""),
+      taskNumber: taskObj?.number,
       taskTitle: taskObj?.title || "Task",
       projectId:
         taskObj?.project?._id?.toString() ||
         (taskObj?.project ? taskObj.project.toString() : ""),
+      projectKey: taskObj?.project?.key || "TF",
       projectName: taskObj?.project?.name || "Project",
       authorName: authorObj?.name || "Team Member",
       authorRole: authorObj?.role || "user",
@@ -474,7 +497,12 @@ export default async function DashboardPage() {
     };
   });
 
-  const sidebarProjects = userProjects.map((p) => ({ id: p.id, name: p.name }));
+  const sidebarProjects = userProjects.map((p) => ({
+    id: p.id,
+    name: p.name,
+    key: p.key,
+    color: p.color,
+  }));
 
   return (
     <AppShell

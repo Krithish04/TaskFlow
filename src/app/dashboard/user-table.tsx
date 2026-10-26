@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { UserRole } from "@/models/User";
+import type { UserRole } from "@/models/User";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

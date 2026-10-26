@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 interface KanbanCardProps {
   task: KanbanTask;
   currentUserId: string;
+  projectKey?: string;
   isOverlay?: boolean;
   onClick?: (task: KanbanTask) => void;
 }
@@ -28,6 +29,7 @@ const PRIORITY_BADGE_VARIANTS: Record<
 export function KanbanCard({
   task,
   currentUserId,
+  projectKey,
   isOverlay,
   onClick,
 }: KanbanCardProps) {
@@ -85,11 +87,18 @@ export function KanbanCard({
         isDragging && "opacity-30"
       )}
     >
-      {/* Top Header: Priority Badge & Drag Handle */}
+      {/* Top Header: Task ID & Priority Badge & Drag Handle */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <Badge variant={priorityVariant} size="sm" dot>
-          {priorityLabel}
-        </Badge>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {projectKey && task.number !== undefined && (
+            <span className="font-mono text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border/80 tracking-wide">
+              {projectKey}-{task.number}
+            </span>
+          )}
+          <Badge variant={priorityVariant} size="sm" dot>
+            {priorityLabel}
+          </Badge>
+        </div>
         <div className="flex items-center text-muted-foreground/40 group-hover:text-muted-foreground transition-colors">
           <GripVertical className="size-3.5" />
         </div>
