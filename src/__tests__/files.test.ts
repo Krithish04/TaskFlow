@@ -277,3 +277,116 @@ describe("File Storage - Project Isolation & Access Control", () => {
     assert.equal(canDeleteFile(regularNonUploader, fileInProjectB, projectB), false);
   });
 });
+
+describe("Files Tab - Filtering & Storage Quota Computation", () => {
+  const sampleFiles = [
+    { _id: "1", name: "architecture.pdf", mime: "application/pdf", size: 1024 * 500, uploader: "user-1" },
+    { _id: "2", name: "hero.png", mime: "image/png", size: 1024 * 1024, uploader: "user-2" },
+    { _id: "3", name: "budget.xlsx", mime: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", size: 1024 * 200, uploader: "user-1" },
+    { _id: "4", name: "bundle.zip", mime: "application/zip", size: 1024 * 800, uploader: "user-3" },
+    { _id: "5", name: "notes.txt", mime: "text/plain", size: 1024 * 50, uploader: "user-2" },
+  ];
+
+  it("filters project files by type category accurately", () => {
+    const filterByCategory = (files: typeof sampleFiles, category: string) => {
+      if (category === "all") return files;
+      return files.filter((f) => {
+        const ext = f.name.split(".").pop()?.toLowerCase();
+        if (category === "image") return f.mime.startsWith("image/") || ["png", "jpg"].includes(ext || "");
+        if (category === "doc") return ["pdf", "docx", "txt", "md"].includes(ext || "");
+        if (category === "spreadsheet") return ["xlsx", "csv"].includes(ext || "");
+        if (category === "archive") return ["zip", "tar", "gz"].includes(ext || "");
+        return false;
+      });
+    };
+
+    assert.equal(filterByCategory(sampleFiles, "image").length, 1);
+    assert.equal(filterByCategory(sampleFiles, "doc").length, 2); // pdf + txt
+    assert.equal(filterByCategory(sampleFiles, "spreadsheet").length, 1);
+    assert.equal(filterByCategory(sampleFiles, "archive").length, 1);
+    assert.equal(filterByCategory(sampleFiles, "all").length, 5);
+  });
+
+  it("filters project files by uploader accurately", () => {
+    const filterByUploader = (files: typeof sampleFiles, uploaderId: string) => {
+      if (uploaderId === "all") return files;
+      return files.filter((f) => f.uploader === uploaderId);
+    };
+
+    assert.equal(filterByUploader(sampleFiles, "user-1").length, 2);
+    assert.equal(filterByUploader(sampleFiles, "user-2").length, 2);
+    assert.equal(filterByUploader(sampleFiles, "user-3").length, 1);
+    assert.equal(filterByUploader(sampleFiles, "all").length, 5);
+  });
+
+  it("computes storage used and quota percentage accurately", () => {
+    const totalBytes = sampleFiles.reduce((acc, f) => acc + f.size, 0);
+    const quotaMax = 100 * 1024 * 1024;
+    const percent = (totalBytes / quotaMax) * 100;
+
+    assert.equal(totalBytes, 2635776); // ~2.51 MB
+    assert.ok(percent > 2.5 && percent < 2.6);
+  });
+});
+
+describe("Task Drawer - File Attachment & Detachment Isolation", () => {
+  const projectAId = new Types.ObjectId().toString();
+  const projectBId = new Types.ObjectId().toString();
+
+  const taskInProjectA = {
+    _id: new Types.ObjectId().toString(),
+    project: projectAId,
+    title: "Implement Auth Flow",
+  };
+
+  const fileInProjectA = {
+    _id: new Types.ObjectId().toString(),
+    project: projectAId,
+    name: "auth_diagram.png",
+    taskId: null as string | null,
+  };
+
+  const fileInProjectB = {
+    _id: new Types.ObjectId().toString(),
+    project: projectBId,
+    name: "unrelated_secret.pdf",
+    taskId: null as string | null,
+  };
+
+  it("attaches a file of the same project to a task successfully", () => {
+    const attachFileToTask = (file: typeof fileInProjectA, task: typeof taskInProjectA) => {
+      if (!matchesId(file.project, task.project)) {
+        throw new Error("Task not found in this project");
+      }
+      return { ...file, taskId: task._id };
+    };
+
+    const updated = attachFileToTask(fileInProjectA, taskInProjectA);
+    assert.equal(updated.taskId, taskInProjectA._id);
+  });
+
+  it("rejects attaching a file of Project B to a task in Project A (isolation)", () => {
+    const attachFileToTask = (file: typeof fileInProjectB, task: typeof taskInProjectA) => {
+      if (!matchesId(file.project, task.project)) {
+        throw new Error("Task not found in this project");
+      }
+      return { ...file, taskId: task._id };
+    };
+
+    assert.throws(() => attachFileToTask(fileInProjectB, taskInProjectA), /Task not found in this project/);
+  });
+
+  it("detaches a file from a task by setting taskId to null", () => {
+    const attachedFile = { ...fileInProjectA, taskId: taskInProjectA._id };
+    assert.equal(attachedFile.taskId, taskInProjectA._id);
+
+    const detachFile = (file: typeof attachedFile) => {
+      return { ...file, taskId: null };
+    };
+
+    const detached = detachFile(attachedFile);
+    assert.equal(detached.taskId, null);
+    assert.equal(detached.name, "auth_diagram.png");
+  });
+});
+

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { File as FileModel } from "@/models/File";
+import { Task } from "@/models/Task";
 import {
   requireProjectAccess,
   handleAuthError,
@@ -146,3 +147,70 @@ export async function DELETE(
     return NextResponse.json({ error: "Failed to delete file" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  if (!Types.ObjectId.isValid(id)) {
+    return NextResponse.json({ error: "File not found" }, { status: 404 });
+  }
+
+  try {
+    await connectDB();
+
+    const fileDoc = await FileModel.findOne({
+      _id: new Types.ObjectId(id),
+      deletedAt: null,
+    });
+
+    if (!fileDoc) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    // Project isolation check: returns 404 for non-members
+    try {
+      await requireProjectAccess(fileDoc.project, "view");
+    } catch (error) {
+      if (error instanceof UnauthorizedError) throw error;
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    const body = await request.json().catch(() => ({}));
+    const { taskId } = body;
+
+    if (taskId === null || taskId === "") {
+      // Detach from task
+      fileDoc.taskId = null;
+    } else if (typeof taskId === "string") {
+      if (!Types.ObjectId.isValid(taskId)) {
+        return NextResponse.json({ error: "Invalid task ID" }, { status: 400 });
+      }
+      // Ensure the task belongs to the exact same project
+      const task = await Task.findOne({
+        _id: new Types.ObjectId(taskId),
+        project: fileDoc.project,
+      });
+      if (!task) {
+        return NextResponse.json(
+          { error: "Task not found in this project" },
+          { status: 400 }
+        );
+      }
+      fileDoc.taskId = task._id;
+    }
+
+    await fileDoc.save();
+
+    return NextResponse.json({
+      success: true,
+      file: fileDoc,
+    });
+  } catch (error) {
+    const authResponse = handleAuthError(error);
+    if (authResponse) return authResponse;
+    return NextResponse.json({ error: "Failed to update file" }, { status: 500 });
+  }
+}
+

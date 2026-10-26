@@ -4,6 +4,7 @@ import * as React from "react";
 import type { TaskStatus, TaskPriority } from "@/models/Task";
 import { KanbanTask, KanbanUser } from "./types";
 import { TaskComments } from "./task-comments";
+import { TaskAttachments } from "./task-attachments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -440,6 +441,13 @@ function TaskDrawerContent({
                 <span>{new Date(task.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
+
+            {/* Task Files / Attachments */}
+            <TaskAttachments
+              taskId={task.id}
+              projectId={task.projectId}
+              canEdit={true}
+            />
 
             {/* Comment Thread with 5s Polling */}
             <TaskComments taskId={task.id} />

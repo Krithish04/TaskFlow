@@ -2,8 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Types } from "mongoose";
 import { auth } from "@/auth";
 import { requireProjectAccess } from "@/lib/permissions";
-import { EmptyState } from "@/components/ui/empty-state";
-import { FileText } from "lucide-react";
+import { FilesView } from "@/components/files/files-view";
 
 interface FilesPageProps {
   params: Promise<{ id: string }>;
@@ -21,18 +20,29 @@ export default async function FilesPage({ params }: FilesPageProps) {
     redirect(`/login?callbackUrl=/projects/${id}/files`);
   }
 
+  let projectOwnerId = "";
+  let projectKey = "";
+
   try {
-    await requireProjectAccess(id, "view");
+    const { project } = await requireProjectAccess(id, "view");
+    projectOwnerId = project.owner?.toString() || "";
+    projectKey = project.key || "";
   } catch {
     notFound();
   }
 
   return (
-    <div className="py-8">
-      <EmptyState
-        icon={FileText}
-        title="Project Files"
-        description="Secure document and file storage for attachments, specifications, and assets."
+    <div className="py-2">
+      <FilesView
+        projectId={id}
+        projectKey={projectKey}
+        projectOwnerId={projectOwnerId}
+        currentUser={{
+          id: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+          role: session.user.role,
+        }}
       />
     </div>
   );

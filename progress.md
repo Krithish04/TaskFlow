@@ -97,3 +97,27 @@
 - Quality gates passed: `npm test` (48/48 pass), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 25 App Router routes compile cleanly).
 - Next run (Task 32): [review] Files tab (list, filter by type and uploader, delete) and attach and remove files on tasks in the task drawer.
 
+## Task 32: [review] Files tab and task drawer attachments
+- Built full-featured `FilesView` at `/projects/[id]/files`:
+  - Storage quota indicator displaying used storage vs 100 MB limit with a progress bar and percentage badge.
+  - Search input with debounce/immediate filtering by file name.
+  - Type filter pills (`All`, `Images`, `Docs`, `Sheets`, `Zips`) and dynamic Uploader dropdown populated from project files.
+  - File upload with drag-and-drop zone and multi-file upload button.
+  - Responsive file cards featuring file-type specific icons, formatted sizes, relative upload dates, uploader avatar, associated task badge (`KEY-12`), inline image zoom modal, direct download button, and confirmation-protected deletion (uploader, PM owner, Admin).
+  - Clean empty states when no files are uploaded or when filter queries yield 0 matches.
+- Enhanced backend APIs:
+  - `GET /api/projects/[id]/files`: supports `?taskId=<id>` filtering, populates `taskId` (`title number`), populates `uploader` (`name email role`), and computes `totalBytesUsed` and `maxProjectStorageBytes` (100 MB).
+  - `PATCH /api/files/[id]`: attaches (`taskId: "<id>"`) or detaches (`taskId: null`) files to/from tasks with project isolation (404 for non-members, 400 for tasks not in the same project).
+- Integrated `TaskAttachments` component into `TaskDrawer` right above comments:
+  - Lists attached files with file-type icons, sizes, and direct download links.
+  - Direct file upload to task with validation (4 MB max file limit, magic byte checks).
+  - "Choose Existing" picker allowing members to attach unattached project files to the task.
+  - Detach button (`X`) to remove attachments without deleting the underlying project file.
+- Ran CodeRabbit review and addressed findings:
+  - Only showed truly unattached files (`!f.taskId`) in the task drawer's "Choose Existing" picker.
+  - Moved `fetchFiles()` into `finally` during multi-file uploads so partial uploads refresh the list and storage count.
+- Added comprehensive unit tests in `src/__tests__/files.test.ts` covering category and uploader filtering, storage quota calculation, and cross-project isolation when attaching/detaching files. All 54 tests across 18 test suites pass.
+- Verified visual design at 1280px and 375px in both light and dark modes with browser subagent. Passed `npm run typecheck`, `npm run lint`, and `npm run build` (all 25 routes compile cleanly).
+- Next run (Task 33): [review] Analytics library and `GET /api/projects/[id]/analytics?range=7|30|90` using MongoDB aggregation: KPIs, status counts, created vs completed per week, burndown, workload per member, priority counts, overdue list. Unit tests with fixed dates.
+
+

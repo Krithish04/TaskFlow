@@ -14,7 +14,7 @@ import {
 } from "@/lib/file-utils";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -26,15 +26,39 @@ export async function GET(
     await requireProjectAccess(id, "view");
     await connectDB();
 
-    const files = await FileModel.find({
+    const searchParams = request.nextUrl.searchParams;
+    const taskIdParam = searchParams.get("taskId");
+
+    const query: Record<string, unknown> = {
       project: new Types.ObjectId(id),
       deletedAt: null,
-    })
-      .populate("uploader", "name email")
+    };
+
+    if (taskIdParam && Types.ObjectId.isValid(taskIdParam)) {
+      query.taskId = new Types.ObjectId(taskIdParam);
+    }
+
+    const files = await FileModel.find(query)
+      .populate("uploader", "name email role")
+      .populate("taskId", "title number")
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ files });
+    // Compute total active storage used for this project
+    const allProjectFiles = await FileModel.find(
+      { project: new Types.ObjectId(id), deletedAt: null },
+      "size"
+    ).lean();
+    const totalBytesUsed = allProjectFiles.reduce(
+      (acc, file) => acc + (file.size || 0),
+      0
+    );
+
+    return NextResponse.json({
+      files,
+      totalBytesUsed,
+      maxProjectStorageBytes: MAX_PROJECT_STORAGE_BYTES,
+    });
   } catch (error) {
     const authResponse = handleAuthError(error);
     if (authResponse) return authResponse;
