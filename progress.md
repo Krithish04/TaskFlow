@@ -120,4 +120,20 @@
 - Verified visual design at 1280px and 375px in both light and dark modes with browser subagent. Passed `npm run typecheck`, `npm run lint`, and `npm run build` (all 25 routes compile cleanly).
 - Next run (Task 33): [review] Analytics library and `GET /api/projects/[id]/analytics?range=7|30|90` using MongoDB aggregation: KPIs, status counts, created vs completed per week, burndown, workload per member, priority counts, overdue list. Unit tests with fixed dates.
 
+## Task 33: [review] Analytics library and API
+- Implemented `src/lib/analytics.ts` computing all analytics server-side via MongoDB aggregation pipelines (0 tasks loaded into memory):
+  - KPIs: `totalTasks`, `completedTasks`, `inProgressTasks`, `todoTasks`, `reviewTasks`, `overdueTasks`, `completionRate`, `avgCycleTimeDays` (from `createdAt` to `completedAt`), `createdInRange`, `completedInRange`.
+  - Status counts and breakdown with chart colors (`todo`, `in_progress`, `review`, `done`).
+  - Priority counts and breakdown with chart colors (`low`, `medium`, `high`).
+  - Burndown: remaining tasks and ideal linear trajectory across range dates computed via cumulative daily created and completed counts.
+  - Created vs completed per week trends across range buckets.
+  - Workload per member grouped by status (`todo`, `in_progress`, `review`, `done`, `total`) including project members with 0 tasks and unassigned tasks.
+  - Overdue list of non-done tasks with past due dates, sorted by urgency and including `daysOverdue`.
+- Added `GET /api/projects/[id]/analytics?range=7|30|90` with strict project isolation (returns 404 for non-members via `requireProjectAccess(id, "view")`, 401 when unauthenticated).
+- Added unit tests with fixed dates in `src/__tests__/analytics.test.ts` covering date utilities, KPI math, status/priority percentages, burndown points, weekly buckets, and access control isolation.
+- Quality gates passed: `npm test` (66/66 passed), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 26 App Router routes compile cleanly).
+- Ran CodeRabbit review (`coderabbit review --uncommitted --include-untracked`) with 0 new findings.
+- Next run (Task 34): Project Analytics tab with Recharts: KPI cards, status donut, created vs completed, burndown, workload, priority, overdue list, range selector, empty states, text summaries.
+
+
 
