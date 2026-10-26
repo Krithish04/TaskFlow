@@ -142,7 +142,18 @@ export async function PATCH(
 
     if (parsed.data.title !== undefined) task.title = parsed.data.title;
     if (parsed.data.description !== undefined) task.description = parsed.data.description;
-    if (parsed.data.status !== undefined) task.status = parsed.data.status;
+    if (parsed.data.status !== undefined) {
+      const prevStatus = task.status;
+      const newStatus = parsed.data.status;
+      if (prevStatus !== newStatus) {
+        if (newStatus === "done") {
+          task.completedAt = new Date();
+        } else if (prevStatus === "done") {
+          task.completedAt = null;
+        }
+      }
+      task.status = newStatus;
+    }
     if (parsed.data.priority !== undefined) task.priority = parsed.data.priority;
     if (parsed.data.assignee !== undefined) {
       task.assignee = parsed.data.assignee ? new Types.ObjectId(parsed.data.assignee) : null;

@@ -116,6 +116,14 @@ export async function POST(
       );
     }
 
+    if (prevStatus !== status) {
+      if (status === "done") {
+        task.completedAt = new Date();
+      } else if (prevStatus === "done") {
+        task.completedAt = null;
+      }
+    }
+
     task.status = status;
     task.order = order;
     await task.save();

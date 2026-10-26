@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
-import { Project } from "@/models/Project";
+import { Project, generateProjectKey, PROJECT_COLORS } from "@/models/Project";
 import { canCreateProject } from "@/lib/permissions";
 
 const createProjectSchema = z.object({
@@ -15,6 +15,13 @@ const createProjectSchema = z.object({
   description: z.string().trim().max(1000).optional().default(""),
   status: z.enum(["active", "archived", "completed"]).optional().default("active"),
   members: z.array(z.string()).optional().default([]),
+  color: z.enum(PROJECT_COLORS).optional(),
+  key: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{2,5}$/, "Project key must be 2 to 5 uppercase letters")
+    .optional(),
 });
 
 export async function GET() {
@@ -87,7 +94,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, description, status, members } = parsed.data;
+  const { name, description, status, members, color, key } = parsed.data;
 
   // Validate member ObjectIds
   for (const memberId of members) {
@@ -102,10 +109,18 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
+    const existingProjects = await Project.find({}).select("key").lean();
+    const existingKeys = new Set(existingProjects.map((p) => p.key).filter(Boolean));
+    const projectKey = key || generateProjectKey(name, existingKeys);
+    const projectColor = color || "blue";
+
     const createdProject = await Project.create({
       name,
       description,
       status,
+      color: projectColor,
+      key: projectKey,
+      nextTaskNumber: 1,
       owner: new Types.ObjectId(session.user.id),
       members: members.map((id) => new Types.ObjectId(id)),
     });

@@ -5,12 +5,14 @@ export type TaskPriority = "low" | "medium" | "high";
 
 export interface ITask extends Document {
   project: Types.ObjectId;
+  number: number;
   title: string;
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
   assignee?: Types.ObjectId | null;
   dueDate?: Date | null;
+  completedAt?: Date | null;
   order: number;
   createdBy: Types.ObjectId;
   createdAt: Date;
@@ -23,6 +25,12 @@ const TaskSchema = new Schema<ITask>(
       type: Schema.Types.ObjectId,
       ref: "Project",
       required: [true, "Project reference is required"],
+      index: true,
+    },
+    number: {
+      type: Number,
+      required: [true, "Task number is required"],
+      min: 1,
       index: true,
     },
     title: {
@@ -60,6 +68,11 @@ const TaskSchema = new Schema<ITask>(
       default: null,
       index: true,
     },
+    completedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
     order: {
       type: Number,
       required: [true, "Task order position is required"],
@@ -76,9 +89,10 @@ const TaskSchema = new Schema<ITask>(
   }
 );
 
+TaskSchema.index({ project: 1, number: 1 }, { unique: true });
 TaskSchema.index({ project: 1, status: 1, order: 1 });
 TaskSchema.index({ assignee: 1, dueDate: 1 });
+TaskSchema.index({ project: 1, completedAt: 1 });
 
 export const Task: Model<ITask> =
   mongoose.models.Task || mongoose.model<ITask>("Task", TaskSchema);
-

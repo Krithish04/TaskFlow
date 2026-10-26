@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Task } from "@/models/Task";
+import { Project } from "@/models/Project";
 import {
   requireProjectAccess,
   handleAuthError,
@@ -133,14 +134,39 @@ export async function POST(
       taskOrder = highestOrder ? highestOrder.order + 1 : 0;
     }
 
+    // Atomically increment nextTaskNumber on the project
+    const updatedProject = await Project.findByIdAndUpdate(
+      id,
+      { $inc: { nextTaskNumber: 1 } },
+      { new: false }
+    );
+
+    let taskNumber = updatedProject?.nextTaskNumber;
+    if (!taskNumber) {
+      // Fallback if project was un-migrated or missing nextTaskNumber
+      const highestTask = await Task.findOne({ project: id })
+        .sort({ number: -1 })
+        .select("number")
+        .lean();
+      taskNumber = (highestTask?.number || 0) + 1;
+      await Project.updateOne(
+        { _id: id },
+        { $set: { nextTaskNumber: taskNumber + 1 } }
+      );
+    }
+
+    const completedAt = status === "done" ? new Date() : null;
+
     const createdTask = await Task.create({
       project: new Types.ObjectId(id),
+      number: taskNumber,
       title,
       description,
       status,
       priority,
       assignee: assignee ? new Types.ObjectId(assignee) : null,
       dueDate: parsedDueDate,
+      completedAt,
       order: taskOrder,
       createdBy: new Types.ObjectId(user.id),
     });

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
-import { Project } from "@/models/Project";
+import { Project, PROJECT_COLORS } from "@/models/Project";
 import { Task } from "@/models/Task";
 import { Comment } from "@/models/Comment";
 import {
@@ -20,6 +20,13 @@ const updateProjectSchema = z.object({
   description: z.string().trim().max(1000).optional(),
   status: z.enum(["active", "archived", "completed"]).optional(),
   members: z.array(z.string()).optional(),
+  color: z.enum(PROJECT_COLORS).optional(),
+  key: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{2,5}$/, "Project key must be 2 to 5 uppercase letters")
+    .optional(),
 });
 
 export async function GET(
@@ -102,6 +109,12 @@ export async function PATCH(
     }
     if (parsed.data.status !== undefined) {
       project.status = parsed.data.status;
+    }
+    if (parsed.data.color !== undefined) {
+      project.color = parsed.data.color;
+    }
+    if (parsed.data.key !== undefined) {
+      project.key = parsed.data.key;
     }
     let removedMembers: string[] = [];
     if (parsed.data.members !== undefined) {

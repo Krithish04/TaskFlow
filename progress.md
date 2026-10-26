@@ -13,3 +13,13 @@
 - Passed `npm run lint`, `npm run typecheck`, and `npm run build` with 0 errors and 0 warnings.
 - Tested all screens at 375 px and 1280 px in both light and dark modes with browser automation.
 - Next run (Task 25): [review] Data model v2: Project `color`, `key`, `nextTaskNumber`; Task `number` and `completedAt`. Add `scripts/migrate-v2.ts` and `npm run migrate:v2`. Tests for numbering and completedAt.
+
+## Task 25: [review] Data model v2
+- Updated `Project` model with `color` (from 8-color palette), `key` (2-5 uppercase letters), and `nextTaskNumber` (default 1). Added `generateProjectKey` helper.
+- Updated `Task` model with `number` (indexed with project) and `completedAt`.
+- Updated task creation to atomically increment `nextTaskNumber` via `$inc`. Updated task move (`/api/tasks/[id]/move`) and edit (`/api/tasks/[id]`) APIs to set `completedAt` on transition to `done` and clear it on exit from `done`.
+- Created idempotent migration script `scripts/migrate-v2.ts` and registered `npm run migrate:v2`. Verified idempotency (run 1 updated 1 project and 8 tasks; run 2 updated 0 projects and 0 tasks).
+- Added unit tests in `src/__tests__/datamodel-v2.test.ts` and registered `npm test`. All 9 tests passed cleanly.
+- CodeRabbit: `coderabbit review --uncommitted --include-untracked` was launched, but failed due to WebSocket connection abort; proceeding per prompt rules.
+- Verified `npm run lint`, `npm run typecheck`, and `npm run build` all pass with 0 errors.
+- Next run (Task 26): [review] Workspace layout at `/projects/[id]` with persistent project header and tabs (Overview, Board, Chat, Files, Analytics, Members). Move Kanban to `/board`. Redirect the bare route to overview. Return 404 for projects the user cannot access. Build the `/projects` card grid and a project switcher in the sidebar. Show task ids as `KEY-12` everywhere. Project create and edit dialogs get color and key.
