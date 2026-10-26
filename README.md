@@ -28,9 +28,16 @@ TaskFlow is a role-based project management web application built with Next.js (
   - **Comment Summarization (`POST /api/ai/summarize-comments`)**: Synthesizes lengthy comment threads into action items, key decisions, and blockers.
   - **Weekly Status Report (`POST /api/ai/weekly-report`)**: Produces structured executive updates summarizing milestones, risks, and member workload.
   - **Streaming Project Assistant (`POST /api/ai/assistant`)**: Read-only AI assistant streaming answers based on real-time project task data, deadlines, and workload.
+- **Project File Storage (MongoDB GridFS)**:
+  - Secure file uploads (`POST /api/projects/[id]/files`) stored in MongoDB GridFS (`project_files` bucket).
+  - Strict extension allowlisting and binary magic-byte verification (PDF, PNG, JPG, GIF, WEBP, TXT, MD, CSV, DOCX, XLSX, PPTX, ZIP). Prohibits SVG, HTML, and executables.
+  - Per-file limit of 4 MB and per-project storage quota of 100 MB.
+  - Secure file streaming (`GET /api/files/[id]`) with `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox` headers.
+  - Strict project data isolation (non-members receive 404).
+  - *Security notice*: There is no antivirus scanning in this version.
 - **Robust Security & Architecture**:
   - Server-side authorization in all route handlers and server actions (`src/lib/permissions.ts`).
-  - Rolling-window per-user rate limiting on all `/api/ai/*` routes.
+  - Rolling-window per-user rate limiting on all `/api/ai/*` and file upload routes.
   - Graceful handling of Google AI free-tier quota limits (HTTP 429 `AI_QUOTA_EXCEEDED`).
   - Bounded request body parsers and strict Zod schema validation across all API endpoints.
 
@@ -46,7 +53,7 @@ TaskFlow is a role-based project management web application built with Next.js (
 - **Drag & Drop**: `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`
 - **AI Integration**: Vercel AI SDK (`ai`, `@ai-sdk/google`) with Google Gemini
 - **Validation**: Zod 4
-- **Testing**: Vitest with React 19 testing utilities
+- **Testing**: Node.js test runner via tsx (`npm test`)
 
 ---
 
