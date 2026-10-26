@@ -7,39 +7,50 @@ TaskFlow is a role-based project management web application built with Next.js (
 ## Features
 
 - **Role-Based Access Control**:
-  - **Admin**: Full administrative privileges, user role management, system-wide metrics, project oversight.
-  - **Project Manager (PM)**: Project creation and lifecycle management, task assignment, status reports, AI breakdown.
-  - **Team Member (User)**: Personal dashboard with assigned tasks and due dates, Kanban movement of assigned tasks, task comments, comment summaries, and project AI assistant.
-- **Interactive Kanban Board**:
+  - **Admin**: Full administrative privileges, user role management, system-wide metrics, global portfolio analytics across all projects.
+  - **Project Manager (PM)**: Project creation and lifecycle management, task assignment, status reports, AI breakdown, project portfolio analytics for owned projects.
+  - **Team Member (User)**: Personal dashboard with assigned tasks, due dates, personal delivery velocity chart, on-time rate, Kanban movement of assigned tasks, task comments, project chat, and AI assistant.
+- **Dedicated Project Workspaces (`/projects/[id]`)**:
+  - Persistent workspace header with project color accent (8-color curated palette), key badge (2-5 uppercase letters), and tab navigation: *Overview*, *Board*, *Chat*, *Files*, *Analytics*, *Members* (PM/Admin only).
+  - Unambiguous task IDs formatted as `KEY-12` across Kanban cards, task drawers, activity feeds, and dashboards.
+  - Dynamic Project Switcher in the collapsible sidebar.
+- **Project Chat & Collaboration**:
+  - One real-time chat channel per project with author avatars, roles, timestamps, and date divider pills.
+  - Bottom composer supporting Enter to send, Shift+Enter for newlines, and staged attachments tray (up to 5 files, 4 MB each).
+  - Drag-and-drop file attachment overlay and clipboard paste support for screenshots.
+  - Inline zoomable image thumbnails with modal lightbox preview and downloadable file cards.
+  - Incremental 3-second polling with automatic pause when browser tab is hidden and resume when visible.
+  - Unread badge indicator on the workspace Chat tab.
+- **Project File Storage (MongoDB GridFS)**:
+  - Secure file uploads (`POST /api/projects/[id]/files`) stored in MongoDB GridFS (`project_files` bucket).
+  - **Strict Quotas & Limits**: 4 MB maximum per file, 5 files per message, and 100 MB total storage quota per project.
+  - **Allowed File Types**: PDF, PNG, JPG, GIF, WEBP, TXT, MD, CSV, DOCX, XLSX, PPTX, ZIP. Prohibits SVG, HTML, JS, and executables via binary magic-byte detection.
+  - **Secure Streaming**: `GET /api/files/[id]` streams files with `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox` headers, using `Content-Disposition: attachment` for documents/archives and `inline` for images.
+  - *Security Notice*: **No antivirus scanning** is performed in this version. Uploaded files undergo strict extension allowlisting, MIME verification, and binary magic-byte inspection, but files are not scanned by an antivirus engine.
+- **Interactive Kanban Board (`/projects/[id]/board`)**:
   - Four workflow columns: *To Do*, *In Progress*, *Review*, *Done*.
   - Drag-and-drop powered by `@dnd-kit` with reordering within and across columns.
   - Instant optimistic updates with automatic rollback on permission rejection or network errors.
 - **Task Drawer & Discussion Thread**:
   - Slide-over drawer for viewing and editing task metadata (assignee, priority, status, due date).
+  - Direct file attachment to tasks with "Choose Existing" project file picker.
   - Built-in comment feed with background polling every 5 seconds.
   - 1-click comment summarization via Gemini AI.
-- **Role-Tailored Dashboards (`/dashboard`)**:
-  - **Admin Dashboard**: Real-time user metrics, searchable user table with inline role updates, and project directory.
-  - **PM Dashboard**: Active projects summary, workload distribution, overdue task alerts, and weekly AI status reports.
-  - **User Dashboard**: Assigned tasks, due-soon deadlines, project memberships, and recent discussion activity.
+- **Rich Analytics & Performance Visualizations (Recharts)**:
+  - **Project Analytics Tab (`/projects/[id]/analytics`)**: Top KPI cards (Total, Completed, Completion Rate %, Avg Cycle Time, Overdue Tasks), range selector pills (7, 30, 90 days), Recharts Burndown chart with ideal trajectory, Status donut with centered total, Created vs. Completed weekly velocity, Team Workload stacked bars, Priority breakdown, and Overdue tasks list.
+  - **Global Portfolio Analytics (`/dashboard/analytics`)**: Organization-wide project health table (progress, overdue counts, last activity date), tasks per project distribution, and most active team members ranking.
+  - **Personal Performance on User Dashboard**: Tasks completed over time (weekly delivery velocity) and On-Time Delivery Rate percentage.
+  - Accessible design: Every chart includes an accessible screen-reader summary (`sr-only`) and visible caption.
+- **Multi-Tenant Isolation & Anti-Probing**:
+  - Non-negotiable project isolation enforced on every message, file, and analytics query via `requireProjectAccess()`.
+  - Project context is always derived from the stored record, never from client-sent parameters.
+  - Anti-probing: Users without access receive HTTP 404 (Not Found), never 403, preventing resource ID probing.
 - **Integrated AI Capabilities (Google Gemini)**:
   - **Task Breakdown (`POST /api/ai/breakdown`)**: Generates structured subtasks with priority and hour estimates from project briefs.
-  - **Plain-Language Task Creation (`POST /api/ai/create-task`)**: Parses natural language instructions (e.g., *"Assign urgent auth bug to Alice due Friday"*) into draft tasks for user review before saving.
+  - **Plain-Language Task Creation (`POST /api/ai/create-task`)**: Parses natural language instructions into draft tasks for user review before saving.
   - **Comment Summarization (`POST /api/ai/summarize-comments`)**: Synthesizes lengthy comment threads into action items, key decisions, and blockers.
   - **Weekly Status Report (`POST /api/ai/weekly-report`)**: Produces structured executive updates summarizing milestones, risks, and member workload.
   - **Streaming Project Assistant (`POST /api/ai/assistant`)**: Read-only AI assistant streaming answers based on real-time project task data, deadlines, and workload.
-- **Project File Storage (MongoDB GridFS)**:
-  - Secure file uploads (`POST /api/projects/[id]/files`) stored in MongoDB GridFS (`project_files` bucket).
-  - Strict extension allowlisting and binary magic-byte verification (PDF, PNG, JPG, GIF, WEBP, TXT, MD, CSV, DOCX, XLSX, PPTX, ZIP). Prohibits SVG, HTML, and executables.
-  - Per-file limit of 4 MB and per-project storage quota of 100 MB.
-  - Secure file streaming (`GET /api/files/[id]`) with `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox` headers.
-  - Strict project data isolation (non-members receive 404).
-  - *Security notice*: There is no antivirus scanning in this version.
-- **Robust Security & Architecture**:
-  - Server-side authorization in all route handlers and server actions (`src/lib/permissions.ts`).
-  - Rolling-window per-user rate limiting on all `/api/ai/*` and file upload routes.
-  - Graceful handling of Google AI free-tier quota limits (HTTP 429 `AI_QUOTA_EXCEEDED`).
-  - Bounded request body parsers and strict Zod schema validation across all API endpoints.
 
 ---
 
@@ -132,8 +143,9 @@ The seed script creates four accounts across all three permission tiers:
 
 ---
 
-## Database Seeding Notes
+## Database Seeding & Migration Notes
 
+### Database Seeding
 The database seeder is managed via:
 ```bash
 npm run seed
@@ -141,6 +153,17 @@ npm run seed
 
 - **Safety Guard**: The script strictly refuses to execute if `NODE_ENV=production` to prevent accidental data erasure in production environments.
 - **Idempotency**: Clears existing collections before inserting 1 Admin, 1 PM, 2 Users, and 1 demo project with 8 pre-configured tasks across all Kanban stages, with assignees, due dates, and discussion comments.
+
+### Database Migration (v2)
+When upgrading an existing database to TaskFlow v2 data models, run the migration script:
+```bash
+npm run migrate:v2
+```
+
+- **Idempotency**: Running `npm run migrate:v2` repeatedly is completely safe and produces 0 modifications once migrations have completed.
+- **Project Keys & Colors**: Backfills each project with a default palette color and derives a 2-5 character uppercase project key (e.g. `TF`) if unassigned.
+- **Task Numbering**: Sequentially numbers existing tasks (`KEY-1`, `KEY-2`, ...) and initializes `nextTaskNumber` on the project.
+- **Completed Timestamps**: Backfills `completedAt` timestamp for tasks in `done` status.
 
 ---
 
@@ -159,11 +182,12 @@ npm run typecheck
 npm test
 ```
 
-All 26 test suites (240+ tests) cover:
-- Data models & database schema validation
+All 31 test suites (250+ tests) cover:
+- Data models & database schema validation (v2 project keys, colors, task numbering, and completedAt)
 - Authentication & JWT session callbacks
 - Server-side permission matrices (`requireRole`, `requireProjectAccess`, `requireAIPermission`)
-- REST APIs (Users, Projects, Tasks, Comments)
+- Strict multi-tenant isolation (`src/__tests__/isolation.test.ts`) across workspaces, project chat, GridFS storage, and analytics
+- REST APIs (Users, Projects, Tasks, Comments, Messages, Files, Analytics)
 - AI routes (Breakdown, Create-Task, Summarize-Comments, Weekly-Report, Assistant)
 - Rate limiting & 429 quota handling
 - UI dialogs and panel rendering

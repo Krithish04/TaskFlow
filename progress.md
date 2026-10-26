@@ -171,6 +171,32 @@
 - Quality gates passed: `npm test` (76/76 pass), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 27 App Router routes compile cleanly).
 - Next run (Task 36): Extend `src/__tests__/isolation.test.ts` for messages, files and analytics. Accessibility pass (keyboard navigation, focus rings, contrast, aria labels on charts and the chat list). Update README with new limits, GridFS note, migration step and the "no antivirus scanning" note.
 
+## Task 36: Isolation test suite, Accessibility pass & Documentation
+- **Isolation Test Suite (`src/__tests__/isolation.test.ts`)**:
+  - Implemented unit tests covering cross-project data isolation and anti-probing 404 security across all Phase 2 systems:
+    - *Workspace & Project Access*: `requireProjectAccess`, `canViewProject`, and `canEditProject` preventing outsider access with strict 404s.
+    - *Chat & Messages*: Cross-project message retrieval blocking, cross-project message posting rejection, cross-project attachment blocking, and 3-tier deletion permissions via `canDeleteMessage(user, message, project)` (author, owning PM, Admin).
+    - *File Storage & GridFS*: Verifying that project context is strictly derived from the stored record (never client parameters), rejecting cross-project downloads with 404, preventing attaching files to tasks from other projects, and verifying file deletion authorization.
+    - *Analytics Isolation*: Enforcing 404 anti-probing on `/api/projects/[id]/analytics` for outsiders, strict PM project portfolio isolation on `/api/analytics/global`, and 404 rejection for regular team members.
+  - Test suites increased to 31 suites with 93 passing tests in `npm test`.
+- **Accessibility Pass**:
+  - Added global high-contrast focus rings via `:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }` in `src/app/globals.css`.
+  - Added keyboard accessibility and ARIA roles and labels to `ChatView` (`src/components/chat/chat-view.tsx`):
+    - `role="log"`, `aria-label="Project chat message history"`, `aria-live="polite"`, `aria-relevant="additions text"` on the scroll container.
+    - Explicit `aria-label`s on file attachment trigger button, message input textarea, send button, download links, message deletion actions, staged file removal chips, and image lightbox modal controls.
+  - Confirmed screen-reader alternative text descriptions (`sr-only`), visible summary captions, and empty states on all Recharts data visualizations (`ProjectAnalyticsView`, `GlobalAnalyticsView`, and `UserDashboard`).
+- **README Updates (`README.md`)**:
+  - Documented MongoDB GridFS file storage bucket, 4 MB single file limit, 5 files per message limit, and 100 MB per-project storage quota.
+  - Added explicit security notice: *"No antivirus scanning is performed in this version. Uploaded files undergo strict extension allowlisting, MIME verification, and binary magic-byte inspection, but files are not scanned by an antivirus engine."*
+  - Added comprehensive Database Migration (v2) section documenting `npm run migrate:v2`, its idempotency, task numbering, and project key/color derivation.
+  - Updated Quality Assurance section to reflect 31 test suites (250+ tests) including `src/__tests__/isolation.test.ts`.
+- **Quality Gates Passed**:
+  - `npm test`: 31 suites, 93 tests, 0 failures.
+  - `npm run typecheck`: 0 errors.
+  - `npm run lint`: 0 errors, 0 warnings.
+  - `npm run build`: 27 App Router routes successfully compiled.
+- Next run (Task 37): Final pass: lint, typecheck, tests, `npm run build`, `coderabbit review --plain` on the whole branch, ponytail audit. Run `npm run migrate:v2` twice on a seeded database to confirm it is idempotent. Confirm no secrets are committed.
+
 
 
 

@@ -506,6 +506,10 @@ export function ChatView({
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
+        role="log"
+        aria-label="Project chat message history"
+        aria-live="polite"
+        aria-relevant="additions text"
         className="flex-1 overflow-y-auto px-4 py-5 space-y-4 sm:px-6"
       >
         {loading ? (
@@ -707,6 +711,7 @@ export function ChatView({
                                       download={file.name}
                                       className="p-1.5 rounded-md hover:bg-current/15 transition-colors shrink-0"
                                       title="Download file"
+                                      aria-label={`Download ${file.name}`}
                                     >
                                       <Download className="size-3.5" />
                                     </a>
@@ -753,6 +758,7 @@ export function ChatView({
                             onClick={() => setDeleteCandidate(msg._id)}
                             className="text-muted-foreground hover:text-destructive p-1 rounded-md transition-colors"
                             title="Delete message"
+                            aria-label="Delete message"
                           >
                             <Trash2 className="size-3.5" />
                           </button>
@@ -811,6 +817,7 @@ export function ChatView({
                 type="button"
                 onClick={() => removeStagedFile(item.id)}
                 className="size-4 rounded-full flex items-center justify-center hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 ml-1"
+                aria-label={`Remove attachment ${item.name}`}
               >
                 <X className="size-3" />
               </button>
@@ -855,6 +862,7 @@ export function ChatView({
           onClick={() => fileInputRef.current?.click()}
           className="h-9 w-9 p-0 shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
           title={`Attach files (max ${MAX_ATTACHMENTS}, 4 MB each)`}
+          aria-label={`Attach files (up to ${MAX_ATTACHMENTS} files, max 4 MB each)`}
         >
           <Paperclip className="size-4" />
         </Button>
@@ -875,6 +883,7 @@ export function ChatView({
               }
             }}
             placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+            aria-label="Chat message"
             className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary max-h-32 min-h-[38px] leading-relaxed"
           />
         </div>
@@ -884,6 +893,7 @@ export function ChatView({
           type="submit"
           size="sm"
           disabled={isUploading || (!bodyText.trim() && stagedFiles.length === 0)}
+          aria-label="Send message"
           className="h-9 px-3.5 shrink-0 rounded-lg gap-1.5 font-medium"
         >
           {isUploading ? (
@@ -915,6 +925,7 @@ export function ChatView({
                 download={zoomImage.name}
                 className="p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
                 title="Download"
+                aria-label={`Download image ${zoomImage.name}`}
               >
                 <Download className="size-4" />
               </a>
@@ -923,6 +934,7 @@ export function ChatView({
                 onClick={() => setZoomImage(null)}
                 className="p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors"
                 title="Close"
+                aria-label="Close image preview"
               >
                 <X className="size-4" />
               </button>
