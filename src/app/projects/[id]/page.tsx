@@ -7,6 +7,7 @@ import { Task } from "@/models/Task";
 import { requireProjectAccess } from "@/lib/permissions";
 import { KanbanBoard } from "./kanban-board";
 import { KanbanProject, KanbanTask, KanbanUser } from "./types";
+import { AppShell } from "@/components/layout/app-shell";
 
 export const instant = false;
 
@@ -145,8 +146,30 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   projectMembers.forEach((m) => availableMembersMap.set(m.id, m));
   const availableMembers = Array.from(availableMembersMap.values());
 
+  // Accessible projects for the AppShell sidebar
+  const userProjectsDoc =
+    session.user.role === "admin"
+      ? await Project.find({}, "name color").lean()
+      : await Project.find(
+          { $or: [{ owner: session.user.id }, { members: session.user.id }] },
+          "name color"
+        ).lean();
+
+  const sidebarProjects = userProjectsDoc.map((p) => ({
+    id: p._id.toString(),
+    name: p.name,
+    color: (p as { color?: string }).color,
+  }));
+
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <AppShell
+      user={session.user}
+      projects={sidebarProjects}
+      breadcrumbs={[
+        { label: "Projects", href: "/dashboard" },
+        { label: serializedProject.name },
+      ]}
+    >
       <KanbanBoard
         project={serializedProject}
         initialTasks={serializedTasks}
@@ -154,6 +177,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         currentUserRole={session.user.role}
         availableMembers={availableMembers}
       />
-    </div>
+    </AppShell>
   );
 }

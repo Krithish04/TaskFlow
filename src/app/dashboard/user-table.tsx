@@ -3,6 +3,9 @@
 import * as React from "react";
 import { UserRole } from "@/models/User";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Search,
   ShieldCheck,
@@ -12,6 +15,7 @@ import {
   Check,
   AlertCircle,
   Filter,
+  Users,
 } from "lucide-react";
 
 export interface DashboardUser {
@@ -189,8 +193,12 @@ export function UserTable({ initialUsers, currentUserId }: UserTableProps) {
             <tbody className="divide-y divide-border">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                    No users match your criteria.
+                  <td colSpan={4} className="p-4">
+                    <EmptyState
+                      icon={Users}
+                      title="No users match your criteria"
+                      description="Try adjusting your search query or role filter."
+                    />
                   </td>
                 </tr>
               ) : (
@@ -207,18 +215,18 @@ export function UserTable({ initialUsers, currentUserId }: UserTableProps) {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
-                            {getInitials(user.name)}
-                          </div>
+                          <Avatar size="sm">
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                          </Avatar>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-foreground truncate">
+                              <span className="font-medium text-foreground truncate text-xs sm:text-sm">
                                 {user.name}
                               </span>
                               {isCurrent && (
-                                <span className="inline-flex items-center rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                                <Badge variant="secondary" size="sm" className="px-1.5 py-0 text-[10px]">
                                   You
-                                </span>
+                                </Badge>
                               )}
                             </div>
                             <span className="block text-xs text-muted-foreground truncate">
@@ -228,14 +236,22 @@ export function UserTable({ initialUsers, currentUserId }: UserTableProps) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${roleConfig.badgeClass}`}
+                        <Badge
+                          variant={
+                            user.role === "admin"
+                              ? "default"
+                              : user.role === "pm"
+                              ? "status-in-progress"
+                              : "status-done"
+                          }
+                          size="sm"
+                          className="gap-1 font-medium"
                         >
                           <Icon className="size-3" />
                           {roleConfig.label}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="px-4 py-3 hidden md:table-cell text-xs text-muted-foreground">
+                      <td className="px-4 py-3 hidden md:table-cell text-xs text-muted-foreground tabular-nums">
                         {new Date(user.createdAt).toLocaleDateString(undefined, {
                           year: "numeric",
                           month: "short",

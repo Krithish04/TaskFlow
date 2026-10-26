@@ -3,6 +3,7 @@
 import * as React from "react";
 import { KanbanTask } from "./types";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Sparkles,
   Loader2,
@@ -26,12 +27,6 @@ interface AIBreakdownDialogProps {
   onClose: () => void;
   onTasksCreated: (tasks: KanbanTask[]) => void;
 }
-
-const PRIORITY_BADGES = {
-  high: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-  medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-  low: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
-};
 
 export function AIBreakdownDialog({
   projectId,
@@ -316,13 +311,18 @@ export function AIBreakdownDialog({
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider border ${
-                              PRIORITY_BADGES[task.priority]
-                            }`}
+                          <Badge
+                            variant={
+                              task.priority === "high"
+                                ? "priority-high"
+                                : task.priority === "medium"
+                                ? "priority-medium"
+                                : "priority-low"
+                            }
+                            size="sm"
                           >
                             {task.priority}
-                          </span>
+                          </Badge>
                           <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground border border-border">
                             <Clock className="size-2.5" />
                             {task.estimatedHours}h

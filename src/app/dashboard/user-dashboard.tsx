@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   CheckCircle2,
   Clock,
@@ -56,18 +59,6 @@ interface UserDashboardProps {
   userProjects: UserProjectItem[];
 }
 
-const PRIORITY_BADGES = {
-  high: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-  medium: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-  low: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
-};
-
-const STATUS_BADGES = {
-  todo: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20",
-  in_progress: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-  review: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-  done: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-};
 
 const STATUS_LABELS = {
   todo: "To Do",
@@ -285,17 +276,16 @@ export function UserDashboard({
 
           {/* Task List */}
           {filteredTasks.length === 0 ? (
-            <Card className="border-dashed shadow-2xs">
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <CheckCircle2 className="size-10 text-muted-foreground/60 mb-2" />
-                <h3 className="text-sm font-semibold text-foreground">No tasks found</h3>
-                <p className="text-xs text-muted-foreground max-w-sm mt-1">
-                  {searchQuery
-                    ? "No tasks match your current search query."
-                    : "You do not have any tasks in this category."}
-                </p>
-              </CardContent>
-            </Card>
+            <EmptyState
+              icon={CheckCircle2}
+              title="No tasks found"
+              description={
+                searchQuery
+                  ? "No tasks match your current search query."
+                  : "You do not have any tasks in this category."
+              }
+              className="py-12"
+            />
           ) : (
             <div className="space-y-3">
               {filteredTasks.map((task) => {
@@ -307,6 +297,22 @@ export function UserDashboard({
                   new Date(task.dueDate) <= nextWeek &&
                   task.status !== "done";
 
+                const priorityVariant =
+                  task.priority === "high"
+                    ? "priority-high"
+                    : task.priority === "medium"
+                    ? "priority-medium"
+                    : "priority-low";
+
+                const statusVariant =
+                  task.status === "done"
+                    ? "status-done"
+                    : task.status === "in_progress"
+                    ? "status-in-progress"
+                    : task.status === "review"
+                    ? "status-review"
+                    : "status-todo";
+
                 return (
                   <Card
                     key={task.id}
@@ -316,20 +322,12 @@ export function UserDashboard({
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider border ${
-                                PRIORITY_BADGES[task.priority]
-                              }`}
-                            >
-                              {task.priority}
-                            </span>
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider border ${
-                                STATUS_BADGES[task.status]
-                              }`}
-                            >
+                            <Badge variant={priorityVariant} size="sm" dot>
+                              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                            </Badge>
+                            <Badge variant={statusVariant} size="sm">
                               {STATUS_LABELS[task.status]}
-                            </span>
+                            </Badge>
                             <Link
                               href={`/projects/${task.projectId}`}
                               className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary transition-colors"
@@ -424,16 +422,18 @@ export function UserDashboard({
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5 truncate">
-                        <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-[10px]">
-                          {comment.authorName ? comment.authorName[0].toUpperCase() : "U"}
-                        </div>
-                        <span className="font-semibold text-foreground truncate">
+                        <Avatar size="xs">
+                          <AvatarFallback className="text-[9px] font-semibold">
+                            {comment.authorName ? comment.authorName[0].toUpperCase() : "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-semibold text-foreground truncate text-xs">
                           {comment.authorName}
                         </span>
                         {comment.authorRole && (
-                          <span className="text-[9px] uppercase font-semibold text-muted-foreground bg-muted px-1 rounded">
+                          <Badge variant="outline" size="sm" className="px-1 py-0 text-[9px] leading-tight">
                             {comment.authorRole}
-                          </span>
+                          </Badge>
                         )}
                       </div>
                       <time className="text-[10px] text-muted-foreground shrink-0">

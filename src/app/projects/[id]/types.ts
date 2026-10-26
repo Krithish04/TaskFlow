@@ -66,8 +66,8 @@ export const COLUMNS: {
   {
     id: "review",
     title: "Review",
-    accentClass: "border-t-purple-500",
-    badgeClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+    accentClass: "border-t-amber-500",
+    badgeClass: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20",
   },
   {
     id: "done",

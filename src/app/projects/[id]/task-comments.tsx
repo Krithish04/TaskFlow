@@ -3,6 +3,9 @@
 import * as React from "react";
 import { TaskComment } from "./types";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, Send, Loader2, AlertCircle, Sparkles } from "lucide-react";
 
 interface TaskCommentsProps {
@@ -212,9 +215,9 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
       {/* Comments List */}
       <div className="space-y-3">
         {isLoading && comments.length === 0 ? (
-          <div className="flex items-center justify-center py-6 text-muted-foreground text-xs gap-2">
-            <Loader2 className="size-4 animate-spin" />
-            <span>Loading comments...</span>
+          <div className="space-y-2 py-2">
+            <Skeleton className="h-14 w-full" />
+            <Skeleton className="h-14 w-full" />
           </div>
         ) : comments.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
@@ -228,16 +231,18 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-[10px]">
-                    {comment.author?.name ? comment.author.name[0].toUpperCase() : "U"}
-                  </div>
+                  <Avatar size="xs">
+                    <AvatarFallback className="text-[9px] font-semibold">
+                      {comment.author?.name ? comment.author.name[0].toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="font-medium text-foreground">
                     {comment.author?.name || "Unknown User"}
                   </span>
                   {comment.author?.role && (
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground/80 px-1 py-0.2 bg-muted rounded">
+                    <Badge variant="outline" size="sm" className="px-1 py-0 text-[9px] leading-tight">
                       {comment.author.role}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <time className="text-[11px] text-muted-foreground">

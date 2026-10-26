@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarStack } from "@/components/ui/avatar";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   FolderKanban,
   Plus,
@@ -514,17 +517,16 @@ export function PMProjects({
 
       {/* Projects Grid */}
       {filteredProjects.length === 0 ? (
-        <Card className="border-dashed shadow-xs">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Layers className="size-10 text-muted-foreground/60 mb-3" />
-            <h3 className="text-base font-semibold text-foreground">No projects found</h3>
-            <p className="text-xs text-muted-foreground max-w-sm mt-1">
-              {projects.length === 0
-                ? "You haven't created or been assigned to any projects yet. Click 'New Project' above to start your first project."
-                : "No projects match your search criteria."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Layers}
+          title="No projects found"
+          description={
+            projects.length === 0
+              ? "You haven't created or been assigned to any projects yet. Click 'New Project' above to start your first project."
+              : "No projects match your search criteria."
+          }
+          className="py-12"
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.map((project) => {
@@ -537,26 +539,24 @@ export function PMProjects({
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
+                    <Badge
+                      variant={
                         project.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          ? "status-done"
                           : project.status === "completed"
-                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                          : "bg-muted text-muted-foreground border border-border"
-                      }`}
+                          ? "status-in-progress"
+                          : "secondary"
+                      }
+                      size="sm"
                     >
                       {project.status}
-                    </span>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        isOwner
-                          ? "bg-purple-500/10 text-purple-600 dark:text-purple-400"
-                          : "bg-muted text-muted-foreground"
-                      }`}
+                    </Badge>
+                    <Badge
+                      variant={isOwner ? "default" : "outline"}
+                      size="sm"
                     >
                       {isOwner ? "Owner" : "Member"}
-                    </span>
+                    </Badge>
                   </div>
                   <CardTitle className="text-base font-semibold leading-snug mt-2">
                     {project.name}
@@ -577,10 +577,22 @@ export function PMProjects({
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span>Team Members</span>
-                    <span className="font-medium text-foreground">
-                      {project.members.length} {project.members.length === 1 ? "member" : "members"}
-                    </span>
+                    <span>Team</span>
+                    {project.members.length > 0 ? (
+                      <AvatarStack max={4} totalCount={project.members.length}>
+                        {project.members.map((m) => (
+                          <Avatar key={m.id} size="xs" title={m.name}>
+                            <AvatarFallback className="text-[9px]">
+                              {m.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </AvatarStack>
+                    ) : (
+                      <span className="text-muted-foreground/70 italic text-[11px]">
+                        No members
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/40">

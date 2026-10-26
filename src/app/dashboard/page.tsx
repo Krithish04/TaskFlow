@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { auth, signOut } from "@/auth";
+import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import { User, type UserRole } from "@/models/User";
 import { Project } from "@/models/Project";
@@ -18,13 +18,13 @@ import {
   type UserProjectItem,
 } from "./user-dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { AppShell } from "@/components/layout/app-shell";
 import {
   Users,
   FolderKanban,
   Shield,
   Briefcase,
-  LogOut,
   Folder,
   Layers,
 } from "lucide-react";
@@ -96,45 +96,33 @@ export default async function DashboardPage() {
     const pmCount = users.filter((u) => u.role === "pm").length;
     const memberCount = users.filter((u) => u.role === "user").length;
     const activeProjectsCount = projects.filter((p) => p.status === "active").length;
+    const sidebarProjects = projects.map((p) => ({ id: p.id, name: p.name }));
 
     return (
-      <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
-        {/* Top Header Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-border bg-card p-6 shadow-xs">
+      <AppShell
+        user={session.user}
+        projects={sidebarProjects}
+        breadcrumbs={[{ label: "Admin Console" }]}
+      >
+        <div className="space-y-8">
+          {/* Page Title */}
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-600 dark:text-purple-400 border border-purple-500/20">
                 <Shield className="size-3" />
                 Admin Console
               </span>
-              <span className="text-xs text-muted-foreground">
-                Signed in as {session.user.name || session.user.email}
-              </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Organization Administration
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Manage accounts, assign roles, and review organization-wide project activities.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <Button variant="outline" size="sm" type="submit" className="gap-1.5 text-xs">
-                <LogOut className="size-3.5" />
-                Sign Out
-              </Button>
-            </form>
-          </div>
-        </div>
 
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="shadow-xs">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -245,17 +233,18 @@ export default async function DashboardPage() {
                       <CardTitle className="text-base font-semibold leading-snug">
                         {project.name}
                       </CardTitle>
-                      <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider ${
+                      <Badge
+                        variant={
                           project.status === "active"
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                            ? "status-done"
                             : project.status === "completed"
-                            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
-                            : "bg-muted text-muted-foreground border border-border"
-                        }`}
+                            ? "status-in-progress"
+                            : "secondary"
+                        }
+                        size="sm"
                       >
                         {project.status}
-                      </span>
+                      </Badge>
                     </div>
                     {project.description && (
                       <CardDescription className="line-clamp-2 text-xs mt-1">
@@ -270,13 +259,13 @@ export default async function DashboardPage() {
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Team Members</span>
-                      <span className="font-medium text-foreground">
+                      <span className="font-medium text-foreground tabular-nums">
                         {project.membersCount} {project.membersCount === 1 ? "member" : "members"}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span>Created</span>
-                      <span>
+                      <span className="tabular-nums">
                         {new Date(project.createdAt).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
@@ -290,7 +279,8 @@ export default async function DashboardPage() {
             </div>
           )}
         </section>
-      </div>
+        </div>
+      </AppShell>
     );
   }
 
@@ -360,49 +350,38 @@ export default async function DashboardPage() {
       name: u.name,
     }));
 
+    const sidebarProjects = pmProjects.map((p) => ({ id: p.id, name: p.name }));
+
     return (
-      <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
-        {/* Top Header Banner for PM */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-border bg-card p-6 shadow-xs">
+      <AppShell
+        user={session.user}
+        projects={sidebarProjects}
+        breadcrumbs={[{ label: "Project Manager Hub" }]}
+      >
+        <div className="space-y-8">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-500/20">
                 <Briefcase className="size-3" />
                 Project Manager
               </span>
-              <span className="text-xs text-muted-foreground">
-                Signed in as {session.user.name || session.user.email}
-              </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               Project Management Hub
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Lead your project teams, configure project workspaces, and track progress across boards.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <Button variant="outline" size="sm" type="submit" className="gap-1.5 text-xs">
-                <LogOut className="size-3.5" />
-                Sign Out
-              </Button>
-            </form>
-          </div>
-        </div>
 
-        {/* PM Projects Section */}
-        <PMProjects
-          initialProjects={pmProjects}
-          currentUserId={session.user.id}
-          availableUsers={availableUsers}
-        />
-      </div>
+          {/* PM Projects Section */}
+          <PMProjects
+            initialProjects={pmProjects}
+            currentUserId={session.user.id}
+            availableUsers={availableUsers}
+          />
+        </div>
+      </AppShell>
     );
   }
 
@@ -495,48 +474,37 @@ export default async function DashboardPage() {
     };
   });
 
+  const sidebarProjects = userProjects.map((p) => ({ id: p.id, name: p.name }));
+
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
-      {/* Top Header Banner for Team Member */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-xl border border-border bg-card p-6 shadow-xs">
+    <AppShell
+      user={session.user}
+      projects={sidebarProjects}
+      breadcrumbs={[{ label: "My Workspace" }]}
+    >
+      <div className="space-y-8">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <Users className="size-3" />
               Team Member
             </span>
-            <span className="text-xs text-muted-foreground">
-              Signed in as {session.user.name || session.user.email}
-            </span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             My Workspace & Tasks
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Track your assigned work, stay ahead of upcoming deadlines, and follow discussion updates.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <Button variant="outline" size="sm" type="submit" className="gap-1.5 text-xs">
-              <LogOut className="size-3.5" />
-              Sign Out
-            </Button>
-          </form>
-        </div>
-      </div>
 
-      {/* User Dashboard Component */}
-      <UserDashboard
-        assignedTasks={assignedTasks}
-        recentComments={recentComments}
-        userProjects={userProjects}
-      />
-    </div>
+        {/* User Dashboard Component */}
+        <UserDashboard
+          assignedTasks={assignedTasks}
+          recentComments={recentComments}
+          userProjects={userProjects}
+        />
+      </div>
+    </AppShell>
   );
 }

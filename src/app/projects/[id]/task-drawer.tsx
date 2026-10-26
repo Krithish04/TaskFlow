@@ -7,6 +7,7 @@ import { TaskComments } from "./task-comments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   X,
   Calendar,
@@ -186,16 +187,22 @@ function TaskDrawerContent({
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
             <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wider border ${
-                  PRIORITY_BADGES[task.priority]
-                }`}
+              <Badge
+                variant={
+                  task.priority === "high"
+                    ? "priority-high"
+                    : task.priority === "medium"
+                    ? "priority-medium"
+                    : "priority-low"
+                }
+                size="sm"
+                dot
               >
-                {task.priority} Priority
-              </span>
-              <span className="text-xs text-muted-foreground">
+                {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+              </Badge>
+              <Badge variant="outline" size="sm">
                 Column: {STATUS_LABELS[task.status]}
-              </span>
+              </Badge>
             </div>
 
             <Button
