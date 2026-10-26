@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import { CheckSquare } from "lucide-react";
+import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -62,6 +63,7 @@ export default function RootLayout({
         <footer className="border-t border-border py-4 text-center text-xs text-muted-foreground">
           TaskFlow &mdash; Project Management with Role-Based Access & AI
         </footer>
+        <Toaster />
       </body>
     </html>
   );

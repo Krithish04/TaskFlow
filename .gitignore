@@ -41,3 +41,9 @@ taskflow-kit
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+DESIGN.md
+PRD-v2.md 
+PROMPT-v2.md 
+tasks-v2.md 
