@@ -31,3 +31,13 @@
 - Ran CodeRabbit review and addressed security and correctness findings (gated availableMembers query to authorized creators/managers and aligned query with schema). Verified `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` all pass with 0 errors.
 - Next run (Task 27): Overview tab: description, progress, upcoming due, members, and a recent activity feed (latest tasks, messages and files of this project only).
 
+## Task 27: Overview tab
+- Implemented rich Project Overview tab at `/projects/[id]/overview` featuring:
+  - Top KPI cards (Total Tasks, In Progress, Completed, Overdue) and project accent progress bar.
+  - Project Details with formatted description, status/key badges, and direct links to Kanban and Chat.
+  - Upcoming Due list with priority badges, assignees, formatted due dates, and overdue alerts.
+  - Project Team members card with roles and owner badge, with "Manage" link for PM/Admin.
+  - Chronological Recent Activity feed strictly scoped to the project, merging task creation/completion, task comments, chat messages, and file uploads.
+- Created `src/lib/overview-utils.ts` and comprehensive unit tests in `src/__tests__/overview.test.ts`. Enhanced `src/lib/db.ts` to validate connection readyState against stale drops.
+- Tested responsive layout at 1280px and 375px in both light and dark modes with browser subagent (0 overflow, clean stacking). All checks passed: `npm run typecheck`, `npm run lint`, `npm test` (13 passed), and `npm run build` (21 routes compiled).
+- Next run (Task 28): Members tab (PM and Admin): add and remove project members. Removing a member unassigns their tasks and revokes access immediately.

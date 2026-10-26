@@ -19,8 +19,14 @@ if (!global.mongooseCache) {
 }
 
 export async function connectDB(): Promise<typeof mongoose> {
-  if (cached.conn) {
+  if (cached.conn && cached.conn.connection.readyState === 1) {
     return cached.conn;
+  }
+
+  // If connection was dropped or disconnected, clear stale reference
+  if (cached.conn && cached.conn.connection.readyState === 0) {
+    cached.conn = null;
+    cached.promise = null;
   }
 
   const uri = process.env.MONGODB_URI;
@@ -39,6 +45,7 @@ export async function connectDB(): Promise<typeof mongoose> {
   try {
     cached.conn = await cached.promise;
   } catch (error) {
+    cached.conn = null;
     cached.promise = null;
     throw error;
   }

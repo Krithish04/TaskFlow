@@ -195,3 +195,10 @@ export const PRIORITY_CONFIG: Record<TaskPriority, PriorityConfig> = {
     bgClass: "bg-rose-500/10 dark:bg-rose-500/20",
   },
 };
+
+export function getPriorityConfig(priority?: string | null): PriorityConfig {
+  if (priority && priority in PRIORITY_CONFIG) {
+    return PRIORITY_CONFIG[priority as TaskPriority];
+  }
+  return PRIORITY_CONFIG.medium;
+}
