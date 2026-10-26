@@ -2,8 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { Types } from "mongoose";
 import { auth } from "@/auth";
 import { requireProjectAccess } from "@/lib/permissions";
-import { EmptyState } from "@/components/ui/empty-state";
-import { MessageSquare } from "lucide-react";
+import { ChatView } from "@/components/chat/chat-view";
 
 interface ChatPageProps {
   params: Promise<{ id: string }>;
@@ -21,18 +20,25 @@ export default async function ChatPage({ params }: ChatPageProps) {
     redirect(`/login?callbackUrl=/projects/${id}/chat`);
   }
 
+  let projectOwnerId = "";
   try {
-    await requireProjectAccess(id, "view");
+    const { project } = await requireProjectAccess(id, "view");
+    projectOwnerId = project.owner?.toString() || "";
   } catch {
     notFound();
   }
 
   return (
-    <div className="py-8">
-      <EmptyState
-        icon={MessageSquare}
-        title="Project Chat"
-        description="Dedicated project team communication channel with file attachments."
+    <div className="py-1">
+      <ChatView
+        projectId={id}
+        projectOwnerId={projectOwnerId}
+        currentUser={{
+          id: session.user.id,
+          name: session.user.name,
+          email: session.user.email,
+          role: session.user.role,
+        }}
       />
     </div>
   );

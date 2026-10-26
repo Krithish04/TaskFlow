@@ -47,6 +47,36 @@ export function WorkspaceHeader({
   const router = useRouter();
   const [currentProject, setCurrentProject] = React.useState(project);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
+  const [unreadCount, setUnreadCount] = React.useState<number>(0);
+
+  // Poll unread count to drive the Chat tab badge
+  React.useEffect(() => {
+    let isMounted = true;
+    const fetchUnread = async () => {
+      if (pathname.includes(`/projects/${currentProject.id}/chat`)) {
+        if (isMounted) setUnreadCount(0);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/projects/${currentProject.id}/messages/read`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && typeof data.unreadCount === "number") {
+            setUnreadCount(data.unreadCount);
+          }
+        }
+      } catch {
+        // Silently ignore
+      }
+    };
+
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [currentProject.id, pathname]);
 
   const colorConfig = getProjectColor(currentProject.color);
 
@@ -212,6 +242,11 @@ export function WorkspaceHeader({
             >
               <Icon className="size-4 shrink-0" />
               <span>{tab.label}</span>
+              {tab.id === "chat" && unreadCount > 0 && !isActive && (
+                <span className="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-danger text-danger-foreground leading-none">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}

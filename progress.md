@@ -79,3 +79,21 @@
 - Verified all quality gates: `npm test` (48/48 pass), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 25 App Router routes compile cleanly).
 - Next run (Task 31): Chat tab UI: message list, composer with attach button, drag and drop and paste, upload progress, image previews, file cards with size and download, 3 s polling that pauses when the tab is hidden, auto-scroll that does not jump while reading older messages, unread badge on the tab, empty state, mobile layout.
 
+## Task 31: Chat tab UI
+- Built responsive, full-featured `ChatView` client component in `src/components/chat/chat-view.tsx`:
+  - Chronological message list with author avatars, roles, timestamps, and date divider pills.
+  - Distinction between own messages (tinted accent bubble, right-aligned) and others' messages (left-aligned neutral bubble).
+  - Pinned bottom composer with auto-growing textarea, Enter to send, Shift+Enter for newlines, and paperclip attach button.
+  - Staged attachments tray supporting up to 5 files (max 4 MB each) with image thumbnails, file badges, and remove buttons.
+  - Full drag-and-drop file attachment overlay and clipboard paste support (pasting screenshots or files directly stages them).
+  - Multi-file upload progress tracking that streams files to `POST /api/projects/[id]/files` before sending the message.
+  - Rich attachment rendering: inline zoomable image thumbnails with lightbox zoom modal, and document/archive file cards with file-type icons, sizes, and direct download buttons.
+  - 3-second incremental polling via `after` timestamp that automatically pauses when the browser tab is hidden and resumes when visible (`visibilitychange`).
+  - Smart auto-scroll that scrolls to bottom when user sends a message or is already at bottom, while maintaining scroll position and displaying a "New messages ↓" pill if reading older messages.
+  - Message deletion with confirmation for author, PM owner, or Admin.
+  - Empty state when channel has no messages and loading skeletons on initial load.
+- Updated `WorkspaceHeader` with live unread badge polling (`/api/projects/[id]/messages/read`) that renders an unread count badge on the Chat tab when the user is on other tabs.
+- Verified visual design and responsive layout with browser subagent at 1280px and 375px in both light and dark modes, successfully sending messages with zero layout defects.
+- Quality gates passed: `npm test` (48/48 pass), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 25 App Router routes compile cleanly).
+- Next run (Task 32): [review] Files tab (list, filter by type and uploader, delete) and attach and remove files on tasks in the task drawer.
+
