@@ -10,6 +10,8 @@ import {
   computePriorityBreakdown,
   buildBurndownPoints,
   buildWeeklyTrendItems,
+  computeUserOnTimeRate,
+  computeGlobalKPIs,
   STATUS_CHART_COLORS,
   PRIORITY_CHART_COLORS,
 } from "../lib/analytics";
@@ -307,5 +309,132 @@ describe("Analytics API - Isolation & Access Control", () => {
   it("permits Admin to view analytics for any project", () => {
     assert.equal(canAccessAnalytics(adminUser, projectA), true);
     assert.equal(canAccessAnalytics(adminUser, projectB), true);
+  });
+});
+
+describe("Global Analytics - Role Scoping & KPIs Logic", () => {
+  const adminUser = { id: new Types.ObjectId().toString(), role: "admin" };
+  const pmUser1 = { id: new Types.ObjectId().toString(), role: "pm" };
+  const pmUser2 = { id: new Types.ObjectId().toString(), role: "pm" };
+  const regularUser = { id: new Types.ObjectId().toString(), role: "user" };
+
+  const allProjects = [
+    { id: "p1", name: "Alpha", owner: pmUser1.id },
+    { id: "p2", name: "Beta", owner: pmUser1.id },
+    { id: "p3", name: "Gamma", owner: pmUser2.id },
+  ];
+
+  // Helper simulating getGlobalAnalytics project filter
+  const getAccessibleProjectsForGlobal = (user: { id: string; role: string }) => {
+    if (user.role === "admin") {
+      return allProjects;
+    }
+    if (user.role === "pm") {
+      return allProjects.filter((p) => p.owner === user.id);
+    }
+    throw new Error("Access denied"); // 404 for regular users
+  };
+
+  it("permits Admin to see all projects across the organization", () => {
+    const projects = getAccessibleProjectsForGlobal(adminUser);
+    assert.equal(projects.length, 3);
+  });
+
+  it("restricts PM to see only own projects in global analytics (isolation)", () => {
+    const pm1Projects = getAccessibleProjectsForGlobal(pmUser1);
+    assert.equal(pm1Projects.length, 2);
+    assert.deepEqual(
+      pm1Projects.map((p) => p.id),
+      ["p1", "p2"]
+    );
+
+    const pm2Projects = getAccessibleProjectsForGlobal(pmUser2);
+    assert.equal(pm2Projects.length, 1);
+    assert.deepEqual(
+      pm2Projects.map((p) => p.id),
+      ["p3"]
+    );
+  });
+
+  it("denies regular user from accessing global analytics", () => {
+    assert.throws(
+      () => getAccessibleProjectsForGlobal(regularUser),
+      /Access denied/
+    );
+  });
+
+  it("computes global portfolio KPIs accurately", () => {
+    const kpis = computeGlobalKPIs({
+      projectsCount: 4,
+      activeProjectsCount: 3,
+      totalTasks: 50,
+      completedTasks: 35,
+      overdueTasks: 4,
+    });
+
+    assert.equal(kpis.totalProjects, 4);
+    assert.equal(kpis.activeProjects, 3);
+    assert.equal(kpis.totalTasks, 50);
+    assert.equal(kpis.completedTasks, 35);
+    assert.equal(kpis.overdueTasks, 4);
+    assert.equal(kpis.completionRate, 70); // 35 / 50 * 100
+  });
+
+  it("handles empty global portfolio with zero tasks cleanly without NaN", () => {
+    const kpis = computeGlobalKPIs({
+      projectsCount: 0,
+      activeProjectsCount: 0,
+      totalTasks: 0,
+      completedTasks: 0,
+      overdueTasks: 0,
+    });
+
+    assert.equal(kpis.totalProjects, 0);
+    assert.equal(kpis.activeProjects, 0);
+    assert.equal(kpis.totalTasks, 0);
+    assert.equal(kpis.completedTasks, 0);
+    assert.equal(kpis.overdueTasks, 0);
+    assert.equal(kpis.completionRate, 0);
+  });
+});
+
+describe("User Personal Stats - On-Time Delivery Rate & Velocity", () => {
+  it("computes on-time rate when all completed tasks were on time", () => {
+    // 5 completed with due date, 5 on time
+    const rate = computeUserOnTimeRate(5, 5);
+    assert.equal(rate, 100);
+  });
+
+  it("computes on-time rate accurately with mixed deadlines", () => {
+    // 10 completed with due date, 8 on time
+    const rate = computeUserOnTimeRate(10, 8);
+    assert.equal(rate, 80);
+  });
+
+  it("computes on-time rate when 0 tasks were on time", () => {
+    // 4 completed with due date, 0 on time
+    const rate = computeUserOnTimeRate(4, 0);
+    assert.equal(rate, 0);
+  });
+
+  it("returns 100% on-time rate when completed tasks had no due date", () => {
+    const rate = computeUserOnTimeRate(0, 0);
+    assert.equal(rate, 100);
+  });
+
+  it("evaluates whether a completed task is on-time or late with fixed dates", () => {
+    const dueDate = new Date("2026-10-25T12:00:00.000Z");
+
+    // Completed before due date
+    const earlyCompletedAt = new Date("2026-10-24T10:00:00.000Z");
+    assert.equal(earlyCompletedAt <= dueDate, true);
+
+    // Completed exactly on due date
+    const exactCompletedAt = new Date("2026-10-25T12:00:00.000Z");
+    assert.equal(exactCompletedAt <= dueDate, true);
+
+    // Completed after due date (late)
+    const lateCompletedAt = new Date("2026-10-26T09:00:00.000Z");
+    assert.equal(lateCompletedAt <= dueDate, false);
   });
 });

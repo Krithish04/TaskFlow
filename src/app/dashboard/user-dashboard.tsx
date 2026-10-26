@@ -19,7 +19,20 @@ import {
   FolderKanban,
   CheckCircle,
   ExternalLink,
+  TrendingUp,
+  Target,
+  Award,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import type { UserPersonalStats } from "@/lib/analytics";
 
 export interface UserTask {
   id: string;
@@ -63,8 +76,12 @@ interface UserDashboardProps {
   assignedTasks: UserTask[];
   recentComments: UserComment[];
   userProjects: UserProjectItem[];
+  personalStats?: UserPersonalStats;
 }
 
+function emptySubscribe() {
+  return () => {};
+}
 
 const STATUS_LABELS = {
   todo: "To Do",
@@ -77,7 +94,13 @@ export function UserDashboard({
   assignedTasks,
   recentComments,
   userProjects,
+  personalStats,
 }: UserDashboardProps) {
+  const isMounted = React.useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
   const [statusFilter, setStatusFilter] = React.useState<string>("all");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
 
@@ -218,6 +241,147 @@ export function UserDashboard({
           </div>
         </div>
       )}
+
+      {/* Personal Stats & Velocity Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Weekly Completion Velocity Chart */}
+        <Card className="lg:col-span-2 shadow-xs">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-semibold">
+                  Personal Delivery Velocity
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Tasks completed over time across your project memberships
+                </CardDescription>
+              </div>
+              <TrendingUp className="size-4 text-emerald-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            {!isMounted ? (
+              <div className="h-[200px] flex items-center justify-center text-xs text-muted-foreground">
+                Loading velocity trends...
+              </div>
+            ) : !personalStats || personalStats.weeklyCompleted.length === 0 || personalStats.weeklyCompleted.every((w) => w.completed === 0) ? (
+              <div className="h-[200px] flex flex-col items-center justify-center text-center p-4">
+                <CheckCircle2 className="size-8 text-muted-foreground/50 mb-2" />
+                <p className="text-xs font-semibold text-foreground">No recent completed tasks</p>
+                <p className="text-[11px] text-muted-foreground max-w-xs mt-1">
+                  Complete assigned tasks on your project boards to see your weekly delivery velocity here.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p className="sr-only">
+                  Bar chart showing tasks completed per week for the last 4 weeks.
+                </p>
+                <div className="h-[200px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={personalStats.weeklyCompleted}
+                      margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="hsl(var(--border))"
+                        opacity={0.5}
+                      />
+                      <XAxis
+                        dataKey="weekLabel"
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={11}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={11}
+                        tickLine={false}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--popover))",
+                          borderColor: "hsl(var(--border))",
+                          borderRadius: "8px",
+                          fontSize: "12px",
+                          color: "hsl(var(--foreground))",
+                        }}
+                      />
+                      <Bar
+                        dataKey="completed"
+                        name="Tasks Completed"
+                        fill="#10b981"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-2 text-center">
+                  Shows tasks delivered across the last 4 rolling weeks.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* On-Time Rate & Reliability KPI */}
+        <div className="space-y-4">
+          <Card className="shadow-xs">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  On-Time Delivery Rate
+                </CardTitle>
+                <Target className="size-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-2xl font-bold tabular-nums text-foreground">
+                {personalStats?.onTimeRate ?? 100}%
+              </div>
+              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${Math.min(personalStats?.onTimeRate ?? 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {personalStats?.completedWithDueDateCount
+                  ? `${personalStats.onTimeCompletedCount} of ${personalStats.completedWithDueDateCount} completed on or before deadline`
+                  : "All completed tasks delivered on schedule"}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-xs">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Personal Completion
+                </CardTitle>
+                <Award className="size-4 text-emerald-500" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-2xl font-bold tabular-nums text-foreground">
+                {personalStats?.completionRate ?? 0}%
+              </div>
+              <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${Math.min(personalStats?.completionRate ?? 0, 100)}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {personalStats?.completedTasks ?? 0} finished out of{" "}
+                {personalStats?.totalAssigned ?? 0} total assigned tasks
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Main Content Layout: Assigned Tasks & Recent Comments */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

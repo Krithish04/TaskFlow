@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Task, type TaskStatus, type TaskPriority } from "@/models/Task";
 import { Project } from "@/models/Project";
+import "@/models/User";
 import { STATUS_CONFIG, PRIORITY_CONFIG } from "@/lib/design-tokens";
 
 export type AnalyticsRange = "7" | "30" | "90";
@@ -89,6 +90,81 @@ export interface ProjectAnalytics {
   burndown: BurndownPoint[];
   memberWorkload: MemberWorkloadItem[];
   overdueTasks: OverdueTaskItem[];
+}
+
+export interface ProjectHealthItem {
+  id: string;
+  name: string;
+  key?: string;
+  color?: string;
+  status: "active" | "archived" | "completed";
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  overdueTasks: number;
+  completionRate: number; // 0 - 100 percentage
+  lastActivityAt: string | null;
+}
+
+export interface ProjectTaskDistribution {
+  id: string;
+  name: string;
+  key?: string;
+  color?: string;
+  todo: number;
+  in_progress: number;
+  review: number;
+  done: number;
+  total: number;
+  completionRate: number;
+}
+
+export interface ActiveMemberItem {
+  id: string;
+  name: string;
+  email: string;
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  completionRate: number;
+}
+
+export interface GlobalAnalyticsKPIs {
+  totalProjects: number;
+  activeProjects: number;
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+  completionRate: number;
+}
+
+export interface GlobalAnalytics {
+  kpis: GlobalAnalyticsKPIs;
+  projects: ProjectHealthItem[];
+  tasksPerProject: ProjectTaskDistribution[];
+  mostActiveMembers: ActiveMemberItem[];
+}
+
+export interface UserPersonalStats {
+  totalAssigned: number;
+  completedTasks: number;
+  activeTasks: number;
+  overdueTasks: number;
+  completionRate: number; // 0 - 100%
+  onTimeRate: number; // 0 - 100%
+  onTimeCompletedCount: number;
+  completedWithDueDateCount: number;
+  weeklyCompleted: {
+    weekLabel: string;
+    startDate: string;
+    endDate: string;
+    completed: number;
+  }[];
 }
 
 const MONTH_NAMES = [
@@ -800,5 +876,501 @@ export async function getProjectAnalytics(
     burndown,
     memberWorkload,
     overdueTasks,
+  };
+}
+
+export function computeUserOnTimeRate(
+  completedWithDueDateCount: number,
+  onTimeCompletedCount: number
+): number {
+  if (completedWithDueDateCount <= 0) return 100;
+  return Math.round((onTimeCompletedCount / completedWithDueDateCount) * 100);
+}
+
+export function computeGlobalKPIs(data: {
+  projectsCount: number;
+  activeProjectsCount: number;
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+}): GlobalAnalyticsKPIs {
+  const completionRate =
+    data.totalTasks > 0
+      ? Math.round((data.completedTasks / data.totalTasks) * 100)
+      : 0;
+
+  return {
+    totalProjects: data.projectsCount,
+    activeProjects: data.activeProjectsCount,
+    totalTasks: data.totalTasks,
+    completedTasks: data.completedTasks,
+    overdueTasks: data.overdueTasks,
+    completionRate,
+  };
+}
+
+export async function getGlobalAnalytics(
+  userId: string,
+  role: string
+): Promise<GlobalAnalytics> {
+  if (role !== "admin" && role !== "pm") {
+    throw new Error("Access denied");
+  }
+
+  await connectDB();
+
+  const now = new Date();
+  const projectFilter =
+    role === "admin"
+      ? {}
+      : { owner: new Types.ObjectId(userId) };
+
+  const projectsDoc = await Project.find(projectFilter)
+    .populate("owner", "name email")
+    .sort({ name: 1 })
+    .lean();
+
+  if (projectsDoc.length === 0) {
+    return {
+      kpis: {
+        totalProjects: 0,
+        activeProjects: 0,
+        totalTasks: 0,
+        completedTasks: 0,
+        overdueTasks: 0,
+        completionRate: 0,
+      },
+      projects: [],
+      tasksPerProject: [],
+      mostActiveMembers: [],
+    };
+  }
+
+  const projectIds = projectsDoc.map((p) => p._id);
+
+  // Per-project task metrics via MongoDB aggregation (no tasks loaded in memory)
+  const projectMetricsRaw = await Task.aggregate([
+    { $match: { project: { $in: projectIds } } },
+    {
+      $group: {
+        _id: {
+          project: "$project",
+          status: "$status",
+        },
+        count: { $sum: 1 },
+        overdueCount: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$status", "done"] },
+                  { $ne: ["$dueDate", null] },
+                  { $lt: ["$dueDate", now] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        maxUpdatedAt: { $max: "$updatedAt" },
+        maxCreatedAt: { $max: "$createdAt" },
+      },
+    },
+  ]);
+
+  const projectMetricsMap = new Map<
+    string,
+    {
+      todo: number;
+      in_progress: number;
+      review: number;
+      done: number;
+      total: number;
+      overdue: number;
+      lastActivityDate: Date | null;
+    }
+  >();
+
+  for (const pid of projectIds) {
+    projectMetricsMap.set(pid.toString(), {
+      todo: 0,
+      in_progress: 0,
+      review: 0,
+      done: 0,
+      total: 0,
+      overdue: 0,
+      lastActivityDate: null,
+    });
+  }
+
+  for (const row of projectMetricsRaw) {
+    const pid = row._id.project.toString();
+    const metric = projectMetricsMap.get(pid);
+    if (!metric) continue;
+
+    const status = row._id.status as TaskStatus;
+    const count = Number(row.count) || 0;
+    const overdue = Number(row.overdueCount) || 0;
+
+    if (status === "todo") metric.todo += count;
+    else if (status === "in_progress") metric.in_progress += count;
+    else if (status === "review") metric.review += count;
+    else if (status === "done") metric.done += count;
+
+    metric.total += count;
+    metric.overdue += overdue;
+
+    const latestDate = row.maxUpdatedAt
+      ? new Date(row.maxUpdatedAt)
+      : row.maxCreatedAt
+      ? new Date(row.maxCreatedAt)
+      : null;
+
+    if (latestDate) {
+      if (!metric.lastActivityDate || latestDate > metric.lastActivityDate) {
+        metric.lastActivityDate = latestDate;
+      }
+    }
+  }
+
+  let totalTasksAll = 0;
+  let completedTasksAll = 0;
+  let overdueTasksAll = 0;
+
+  const projectHealthItems: ProjectHealthItem[] = projectsDoc.map((p) => {
+    const pid = p._id.toString();
+    const metric = projectMetricsMap.get(pid)!;
+    const ownerObj = p.owner as unknown as { _id?: unknown; name?: string; email?: string } | null;
+
+    totalTasksAll += metric.total;
+    completedTasksAll += metric.done;
+    overdueTasksAll += metric.overdue;
+
+    const projectUpdated = p.updatedAt ? new Date(p.updatedAt) : null;
+    const effectiveLastActivity =
+      metric.lastActivityDate && projectUpdated
+        ? metric.lastActivityDate > projectUpdated
+          ? metric.lastActivityDate
+          : projectUpdated
+        : metric.lastActivityDate || projectUpdated;
+
+    const completionRate =
+      metric.total > 0 ? Math.round((metric.done / metric.total) * 100) : 0;
+
+    return {
+      id: pid,
+      name: p.name,
+      key: p.key,
+      color: p.color,
+      status: p.status,
+      owner: {
+        id: ownerObj?._id?.toString() || "",
+        name: ownerObj?.name || "Unassigned",
+        email: ownerObj?.email || "",
+      },
+      totalTasks: metric.total,
+      completedTasks: metric.done,
+      inProgressTasks: metric.in_progress,
+      overdueTasks: metric.overdue,
+      completionRate,
+      lastActivityAt: effectiveLastActivity
+        ? effectiveLastActivity.toISOString()
+        : null,
+    };
+  });
+
+  const tasksPerProject: ProjectTaskDistribution[] = projectHealthItems.map(
+    (p) => {
+      const metric = projectMetricsMap.get(p.id)!;
+      return {
+        id: p.id,
+        name: p.name,
+        key: p.key,
+        color: p.color,
+        todo: metric.todo,
+        in_progress: metric.in_progress,
+        review: metric.review,
+        done: metric.done,
+        total: metric.total,
+        completionRate: p.completionRate,
+      };
+    }
+  );
+
+  // Most Active Members via MongoDB aggregation
+  const activeMembersRaw = await Task.aggregate([
+    {
+      $match: {
+        project: { $in: projectIds },
+        assignee: { $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: "$assignee",
+        totalTasks: { $sum: 1 },
+        completedTasks: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "done"] }, 1, 0],
+          },
+        },
+        inProgressTasks: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "in_progress"] }, 1, 0],
+          },
+        },
+      },
+    },
+    { $sort: { totalTasks: -1 } },
+    { $limit: 10 },
+    {
+      $lookup: {
+        from: "users",
+        localField: "_id",
+        foreignField: "_id",
+        as: "user",
+      },
+    },
+    { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+    {
+      $project: {
+        _id: 1,
+        totalTasks: 1,
+        completedTasks: 1,
+        inProgressTasks: 1,
+        name: "$user.name",
+        email: "$user.email",
+      },
+    },
+  ]);
+
+  const mostActiveMembers: ActiveMemberItem[] = activeMembersRaw.map((m) => {
+    const total = Number(m.totalTasks) || 0;
+    const completed = Number(m.completedTasks) || 0;
+    const inProgress = Number(m.inProgressTasks) || 0;
+    return {
+      id: m._id.toString(),
+      name: m.name || "Team Member",
+      email: m.email || "",
+      totalTasks: total,
+      completedTasks: completed,
+      inProgressTasks: inProgress,
+      completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
+    };
+  });
+
+  const activeProjectsCount = projectsDoc.filter(
+    (p) => p.status === "active"
+  ).length;
+
+  const kpis = computeGlobalKPIs({
+    projectsCount: projectsDoc.length,
+    activeProjectsCount,
+    totalTasks: totalTasksAll,
+    completedTasks: completedTasksAll,
+    overdueTasks: overdueTasksAll,
+  });
+
+  return {
+    kpis,
+    projects: projectHealthItems,
+    tasksPerProject,
+    mostActiveMembers,
+  };
+}
+
+export async function getUserPersonalStats(
+  userId: string,
+  nowDate: Date = new Date()
+): Promise<UserPersonalStats> {
+  await connectDB();
+
+  const userObjectId = new Types.ObjectId(userId);
+
+  // Find all projects the user belongs to (member or owner)
+  const accessibleProjects = await Project.find(
+    { $or: [{ owner: userObjectId }, { members: userObjectId }] },
+    "_id"
+  ).lean();
+
+  if (accessibleProjects.length === 0) {
+    return {
+      totalAssigned: 0,
+      completedTasks: 0,
+      activeTasks: 0,
+      overdueTasks: 0,
+      completionRate: 0,
+      onTimeRate: 100,
+      onTimeCompletedCount: 0,
+      completedWithDueDateCount: 0,
+      weeklyCompleted: [],
+    };
+  }
+
+  const projectIds = accessibleProjects.map((p) => p._id);
+
+  // Task metrics via MongoDB aggregation
+  const taskStatsRaw = await Task.aggregate([
+    {
+      $match: {
+        assignee: userObjectId,
+        project: { $in: projectIds },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalAssigned: { $sum: 1 },
+        completedTasks: {
+          $sum: { $cond: [{ $eq: ["$status", "done"] }, 1, 0] },
+        },
+        activeTasks: {
+          $sum: { $cond: [{ $ne: ["$status", "done"] }, 1, 0] },
+        },
+        overdueTasks: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$status", "done"] },
+                  { $ne: ["$dueDate", null] },
+                  { $lt: ["$dueDate", nowDate] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        completedWithDueDateCount: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$status", "done"] },
+                  { $ne: ["$dueDate", null] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        onTimeCompletedCount: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$status", "done"] },
+                  { $ne: ["$dueDate", null] },
+                  {
+                    $lte: [
+                      { $ifNull: ["$completedAt", "$updatedAt"] },
+                      "$dueDate",
+                    ],
+                  },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  const stats = taskStatsRaw[0] || {
+    totalAssigned: 0,
+    completedTasks: 0,
+    activeTasks: 0,
+    overdueTasks: 0,
+    completedWithDueDateCount: 0,
+    onTimeCompletedCount: 0,
+  };
+
+  const totalAssigned = Number(stats.totalAssigned) || 0;
+  const completedTasks = Number(stats.completedTasks) || 0;
+  const activeTasks = Number(stats.activeTasks) || 0;
+  const overdueTasks = Number(stats.overdueTasks) || 0;
+  const completedWithDueDateCount = Number(stats.completedWithDueDateCount) || 0;
+  const onTimeCompletedCount = Number(stats.onTimeCompletedCount) || 0;
+
+  const completionRate =
+    totalAssigned > 0 ? Math.round((completedTasks / totalAssigned) * 100) : 0;
+
+  const onTimeRate = computeUserOnTimeRate(
+    completedWithDueDateCount,
+    onTimeCompletedCount
+  );
+
+  // Weekly completion trend (last 4 weeks)
+  const weeklyBuckets: {
+    weekLabel: string;
+    startDate: string;
+    endDate: string;
+    start: Date;
+    end: Date;
+  }[] = [];
+
+  for (let i = 3; i >= 0; i--) {
+    const end = new Date(nowDate.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+    const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const label = `W-${4 - i}`;
+    weeklyBuckets.push({
+      weekLabel: label,
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+      start,
+      end,
+    });
+  }
+
+  const fourWeeksAgo = weeklyBuckets[0].start;
+
+  const recentCompletedRaw = await Task.aggregate([
+    {
+      $match: {
+        assignee: userObjectId,
+        project: { $in: projectIds },
+        status: "done",
+        $or: [
+          { completedAt: { $gte: fourWeeksAgo } },
+          { updatedAt: { $gte: fourWeeksAgo } },
+        ],
+      },
+    },
+    {
+      $project: {
+        effectiveCompletedAt: { $ifNull: ["$completedAt", "$updatedAt"] },
+      },
+    },
+  ]);
+
+  const weeklyCompleted = weeklyBuckets.map((bucket) => {
+    const count = recentCompletedRaw.filter((t) => {
+      const d = new Date(t.effectiveCompletedAt);
+      return d >= bucket.start && d < bucket.end;
+    }).length;
+
+    return {
+      weekLabel: bucket.weekLabel,
+      startDate: bucket.startDate,
+      endDate: bucket.endDate,
+      completed: count,
+    };
+  });
+
+  return {
+    totalAssigned,
+    completedTasks,
+    activeTasks,
+    overdueTasks,
+    completionRate,
+    onTimeRate,
+    onTimeCompletedCount,
+    completedWithDueDateCount,
+    weeklyCompleted,
   };
 }

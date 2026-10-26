@@ -14,6 +14,7 @@ import {
   Search,
   ChevronRight,
   ChevronsUpDown,
+  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -145,6 +146,21 @@ export function AppShell({
             <FolderKanban className="size-4 shrink-0" />
             <span>Projects</span>
           </Link>
+
+          {(user.role === "admin" || user.role === "pm") && (
+            <Link
+              href="/dashboard/analytics"
+              className={cn(
+                "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-xs sm:text-sm font-medium transition-colors",
+                pathname === "/dashboard/analytics"
+                  ? "bg-accent text-accent-foreground font-semibold"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              )}
+            >
+              <BarChart3 className="size-4 shrink-0" />
+              <span>Analytics</span>
+            </Link>
+          )}
         </div>
 
         {/* Projects & Project Switcher */}

@@ -152,6 +152,25 @@
 - Quality gates passed: `npm test` (66/66 passed), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 26 App Router routes compile cleanly).
 - Next run (Task 35): [review] Global analytics page `/dashboard/analytics` (Admin: all projects, PM: own projects) with project health table, and personal stats on the User dashboard.
 
+## Task 35: [review] Global analytics page & User personal stats
+- Implemented `getGlobalAnalytics` (Admin: all projects, PM: own projects) and `getUserPersonalStats` in `src/lib/analytics.ts` using MongoDB aggregation (0 tasks loaded into memory).
+- Added `GET /api/analytics/global` with role guards (Admin/PM only; anti-probing 404 for regular users).
+- Built Global Analytics page at `/dashboard/analytics` with `GlobalAnalyticsView` (`src/components/analytics/global-analytics-view.tsx`):
+  - Top portfolio KPI cards: Total Projects, Total Tasks, Completed Tasks, Overall Completion Rate, and Overdue Tasks.
+  - Interactive Project Health Table with client-side project search, progress bars, overdue counts, last activity date, and direct workspace links.
+  - Recharts `BarChart` for Tasks per Project distribution (Done, In Progress, Review, To Do) with accessible text summary.
+  - Most active team members ranking with avatars, completion volume, and delivery rates.
+- Integrated Personal Stats into User dashboard (`/dashboard`):
+  - Recharts `BarChart` for Personal Delivery Velocity across rolling 4-week intervals.
+  - On-Time Delivery Rate KPI card with deadline delivery metrics and completion rate indicators.
+  - Empty states and accessible screen reader summaries for all visualizations.
+- Updated `AppShell` with direct "Analytics" navigation link for Admin and PM users, and added "Portfolio Analytics" header action buttons on Admin Console and PM Hub.
+- Added comprehensive unit tests in `src/__tests__/analytics.test.ts` for role scoping, PM project isolation, global KPI calculations, on-time delivery rates, and deadline evaluations. All 76 tests across 26 test suites pass.
+- Ran CodeRabbit review (`coderabbit review --uncommitted --include-untracked`), and resolved hydration mismatch on relative time in the Project Health table.
+- Verified responsive layouts at 1280px and 375px across both light and dark themes with browser automation (0 horizontal overflow), including anti-probing 404 verification for regular users on `/dashboard/analytics`.
+- Quality gates passed: `npm test` (76/76 pass), `npm run typecheck` (0 errors), `npm run lint` (0 errors), and `npm run build` (all 27 App Router routes compile cleanly).
+- Next run (Task 36): Extend `src/__tests__/isolation.test.ts` for messages, files and analytics. Accessibility pass (keyboard navigation, focus rings, contrast, aria labels on charts and the chat list). Update README with new limits, GridFS note, migration step and the "no antivirus scanning" note.
+
 
 
 

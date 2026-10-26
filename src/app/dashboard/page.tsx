@@ -17,9 +17,13 @@ import {
   type UserComment,
   type UserProjectItem,
 } from "./user-dashboard";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { AppShell } from "@/components/layout/app-shell";
+import { getUserPersonalStats } from "@/lib/analytics";
 import {
   Users,
   FolderKanban,
@@ -27,6 +31,7 @@ import {
   Briefcase,
   Folder,
   Layers,
+  BarChart3,
 } from "lucide-react";
 
 export interface SerializedProject {
@@ -115,19 +120,32 @@ export default async function DashboardPage() {
       >
         <div className="space-y-8">
           {/* Page Title */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                <Shield className="size-3" />
-                Admin Console
-              </span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-2.5 py-0.5 text-xs font-semibold text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  <Shield className="size-3" />
+                  Admin Console
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                Organization Administration
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Manage accounts, assign roles, and review organization-wide project activities.
+              </p>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Organization Administration
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Manage accounts, assign roles, and review organization-wide project activities.
-            </p>
+
+            <Link
+              href="/dashboard/analytics"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "gap-1.5 self-start sm:self-auto"
+              )}
+            >
+              <BarChart3 className="size-3.5" />
+              Portfolio Analytics
+            </Link>
           </div>
 
           {/* Metrics Grid */}
@@ -375,19 +393,32 @@ export default async function DashboardPage() {
         breadcrumbs={[{ label: "Project Manager Hub" }]}
       >
         <div className="space-y-8">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                <Briefcase className="size-3" />
-                Project Manager
-              </span>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <Briefcase className="size-3" />
+                  Project Manager
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                Project Management Hub
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                Lead your project teams, configure project workspaces, and track progress across boards.
+              </p>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Project Management Hub
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Lead your project teams, configure project workspaces, and track progress across boards.
-            </p>
+
+            <Link
+              href="/dashboard/analytics"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "gap-1.5 self-start sm:self-auto"
+              )}
+            >
+              <BarChart3 className="size-3.5" />
+              Portfolio Analytics
+            </Link>
           </div>
 
           {/* PM Projects Section */}
@@ -504,6 +535,8 @@ export default async function DashboardPage() {
     color: p.color,
   }));
 
+  const personalStats = await getUserPersonalStats(session.user.id);
+
   return (
     <AppShell
       user={session.user}
@@ -531,6 +564,7 @@ export default async function DashboardPage() {
           assignedTasks={assignedTasks}
           recentComments={recentComments}
           userProjects={userProjects}
+          personalStats={personalStats}
         />
       </div>
     </AppShell>
