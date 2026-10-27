@@ -22,7 +22,9 @@ export async function migrateV2(): Promise<MigrationStats> {
     tasksUpdated: 0,
   };
 
-  const projects = await Project.find({}).sort({ createdAt: 1, _id: 1 });
+  const projects = await Project.find({})
+    .setOptions({ defaults: false })
+    .sort({ createdAt: 1, _id: 1 });
   stats.projectsExamined = projects.length;
 
   const existingKeys = new Set<string>();
@@ -54,10 +56,12 @@ export async function migrateV2(): Promise<MigrationStats> {
     }
 
     // 3. Tasks
-    const tasks = await Task.find({ project: project._id }).sort({
-      createdAt: 1,
-      _id: 1,
-    });
+    const tasks = await Task.find({ project: project._id })
+      .setOptions({ defaults: false })
+      .sort({
+        createdAt: 1,
+        _id: 1,
+      });
     stats.tasksExamined += tasks.length;
 
     let maxTaskNumber = 0;
@@ -73,21 +77,21 @@ export async function migrateV2(): Promise<MigrationStats> {
       }
     }
 
-    const updatedTaskIds = new Set<string>();
-
-    for (const t of unnumberedTasks) {
-      maxTaskNumber += 1;
-      t.number = maxTaskNumber;
-      await t.save();
-      updatedTaskIds.add(t._id.toString());
-      stats.tasksUpdated += 1;
-    }
+    const unnumberedIds = new Set(unnumberedTasks.map((t) => t._id.toString()));
 
     for (const t of tasks) {
       let taskDirty = false;
+      const originalUpdatedAt = t.updatedAt;
+
+      if (unnumberedIds.has(t._id.toString())) {
+        maxTaskNumber += 1;
+        t.number = maxTaskNumber;
+        taskDirty = true;
+      }
+
       if (t.status === "done") {
         if (!t.completedAt) {
-          t.completedAt = t.updatedAt || t.createdAt || new Date();
+          t.completedAt = originalUpdatedAt || t.createdAt || new Date();
           taskDirty = true;
         }
       } else {
@@ -99,10 +103,7 @@ export async function migrateV2(): Promise<MigrationStats> {
 
       if (taskDirty) {
         await t.save();
-        if (!updatedTaskIds.has(t._id.toString())) {
-          updatedTaskIds.add(t._id.toString());
-          stats.tasksUpdated += 1;
-        }
+        stats.tasksUpdated += 1;
       }
     }
 

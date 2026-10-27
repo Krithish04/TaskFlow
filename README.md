@@ -178,11 +178,11 @@ npm run lint
 # Run TypeScript compiler checks
 npm run typecheck
 
-# Run Vitest unit & integration test suites
+# Run automated test suites (Node.js test runner)
 npm test
 ```
 
-All 31 test suites (250+ tests) cover:
+All 31 test suites (90+ tests) cover:
 - Data models & database schema validation (v2 project keys, colors, task numbering, and completedAt)
 - Authentication & JWT session callbacks
 - Server-side permission matrices (`requireRole`, `requireProjectAccess`, `requireAIPermission`)

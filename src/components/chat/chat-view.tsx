@@ -206,29 +206,35 @@ export function ChatView({
 
     const pollNewMessages = async () => {
       if (document.visibilityState !== "visible") return;
-      if (!latestTimestampRef.current) return;
+      if (loading) return;
 
       try {
-        const res = await fetch(
-          `/api/projects/${projectId}/messages?after=${encodeURIComponent(
-            latestTimestampRef.current
-          )}&limit=50`
-        );
+        const after = latestTimestampRef.current;
+        const qs = after
+          ? `after=${encodeURIComponent(after)}&limit=50`
+          : `limit=50`;
+        const res = await fetch(`/api/projects/${projectId}/messages?${qs}`);
         if (!res.ok) return;
 
         const data = await res.json();
         const incoming: ChatMessage[] = data.messages || [];
 
         if (isMounted && incoming.length > 0) {
+          let hasFresh = false;
           setMessages((prev) => {
             const existing = new Set(prev.map((m) => m._id));
             const fresh = incoming.filter((m) => !existing.has(m._id));
             if (fresh.length === 0) return prev;
+            hasFresh = true;
+            return [...prev, ...fresh];
+          });
 
-            const updated = [...prev, ...fresh];
-            latestTimestampRef.current = updated[updated.length - 1].createdAt;
+          const lastIncoming = incoming[incoming.length - 1];
+          if (!latestTimestampRef.current || lastIncoming.createdAt > latestTimestampRef.current) {
+            latestTimestampRef.current = lastIncoming.createdAt;
+          }
 
-            // Auto-scroll logic: only scroll if user was already near bottom
+          if (hasFresh) {
             if (isNearBottomRef.current) {
               setTimeout(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -236,9 +242,7 @@ export function ChatView({
             } else {
               setHasNewMessagesBelow(true);
             }
-
-            return updated;
-          });
+          }
 
           markAsRead();
         }
@@ -261,7 +265,7 @@ export function ChatView({
       if (intervalId) clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [projectId, markAsRead]);
+  }, [projectId, markAsRead, loading]);
 
   // Auto-scroll on initial load
   React.useEffect(() => {
@@ -426,11 +430,12 @@ export function ChatView({
       setBodyText("");
 
       // Append and update latest timestamp
-      setMessages((prev) => {
-        const next = [...prev, newMsg];
+      setMessages((prev) =>
+        prev.some((m) => m._id === newMsg._id) ? prev : [...prev, newMsg]
+      );
+      if (!latestTimestampRef.current || newMsg.createdAt > latestTimestampRef.current) {
         latestTimestampRef.current = newMsg.createdAt;
-        return next;
-      });
+      }
 
       // Always scroll to bottom when user sends a message
       setTimeout(() => {

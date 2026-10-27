@@ -488,20 +488,25 @@ export function ProjectAnalyticsView({
                 <div className="h-48 w-48 relative flex-shrink-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie
-                        data={data?.statusBreakdown.filter((s) => s.count > 0) || []}
-                        dataKey="count"
-                        nameKey="label"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={75}
-                        paddingAngle={3}
-                      >
-                        {(data?.statusBreakdown || []).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
+                      {(() => {
+                        const activeStatuses = (data?.statusBreakdown || []).filter((s) => s.count > 0);
+                        return (
+                          <Pie
+                            data={activeStatuses}
+                            dataKey="count"
+                            nameKey="label"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={75}
+                            paddingAngle={3}
+                          >
+                            {activeStatuses.map((entry) => (
+                              <Cell key={entry.status} fill={entry.color} />
+                            ))}
+                          </Pie>
+                        );
+                      })()}
                       <Tooltip content={<CustomChartTooltip />} />
                     </PieChart>
                   </ResponsiveContainer>

@@ -138,7 +138,7 @@ export async function POST(
     const updatedProject = await Project.findByIdAndUpdate(
       id,
       { $inc: { nextTaskNumber: 1 } },
-      { new: false }
+      { new: false, defaults: false }
     );
 
     let taskNumber = updatedProject?.nextTaskNumber;

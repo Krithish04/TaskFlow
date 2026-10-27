@@ -61,8 +61,9 @@ export async function GET(
       }
     }
 
-    const messages = await Message.find(query)
-      .sort({ createdAt: 1 })
+    const isIncremental = Boolean(query.createdAt);
+    const docs = await Message.find(query)
+      .sort({ createdAt: isIncremental ? 1 : -1 })
       .limit(limit)
       .populate("author", "name email role")
       .populate({
@@ -71,6 +72,8 @@ export async function GET(
         match: { deletedAt: null },
       })
       .lean();
+
+    const messages = isIncremental ? docs : docs.reverse();
 
     return NextResponse.json({ messages });
   } catch (error) {

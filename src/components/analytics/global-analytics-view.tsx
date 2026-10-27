@@ -587,12 +587,12 @@ export function GlobalAnalyticsView({
                     >
                       <CartesianGrid
                         strokeDasharray="3 3"
-                        stroke="hsl(var(--border))"
+                        stroke="var(--border)"
                         opacity={0.5}
                       />
                       <XAxis
                         dataKey="key"
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="var(--muted-foreground)"
                         fontSize={11}
                         tickLine={false}
                         interval={0}
@@ -600,18 +600,18 @@ export function GlobalAnalyticsView({
                         textAnchor="end"
                       />
                       <YAxis
-                        stroke="hsl(var(--muted-foreground))"
+                        stroke="var(--muted-foreground)"
                         fontSize={11}
                         tickLine={false}
                         allowDecimals={false}
                       />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: "hsl(var(--popover))",
-                          borderColor: "hsl(var(--border))",
+                          backgroundColor: "var(--popover)",
+                          borderColor: "var(--border)",
                           borderRadius: "8px",
                           fontSize: "12px",
-                          color: "hsl(var(--foreground))",
+                          color: "var(--foreground)",
                         }}
                       />
                       <Legend

@@ -195,7 +195,32 @@
   - `npm run typecheck`: 0 errors.
   - `npm run lint`: 0 errors, 0 warnings.
   - `npm run build`: 27 App Router routes successfully compiled.
-- Next run (Task 37): Final pass: lint, typecheck, tests, `npm run build`, `coderabbit review --plain` on the whole branch, ponytail audit. Run `npm run migrate:v2` twice on a seeded database to confirm it is idempotent. Confirm no secrets are committed.
+## Task 37: Final pass & branch review
+- **Verification Gates Passed**:
+  - `npm run lint`: 0 errors, 0 warnings across all source, script, and test files.
+  - `npm run typecheck`: 0 compiler errors.
+  - `npm test`: 31 suites, 93 tests, 0 failures.
+  - `npm run build`: All 27 App Router routes successfully compiled and optimized.
+- **Migration Idempotency Verified**:
+  - Ran `npm run seed` followed by `npm run migrate:v2` twice; confirmed 0 modifications on repeated runs.
+- **CodeRabbit Review & Refinements**:
+  - Ran `coderabbit review --base origin/main` covering 89 files.
+  - Addressed all findings:
+    - Updated `scripts/migrate-v2.ts` to disable schema defaults (`setOptions({ defaults: false })`) and perform atomic single-pass task save preserving `originalUpdatedAt` for `completedAt`.
+    - Added `{ new: false, defaults: false }` to `findByIdAndUpdate` in `src/app/api/projects/[id]/tasks/route.ts` to ensure counter fallback triggers cleanly on un-migrated projects.
+    - Updated `src/app/api/projects/[id]/messages/route.ts` to sort descending and reverse on initial load so the newest messages display chronologically.
+    - Enhanced `src/components/chat/chat-view.tsx` polling to poll channels that start empty, deduplicate incoming/sent messages, and isolate state updaters from side effects.
+    - Fixed Recharts Pie cell mapping in `src/components/analytics/project-analytics-view.tsx` to align cell colors with non-empty statuses.
+    - Fixed Recharts theme token bindings (`var(--...)` instead of `hsl(var(--...))`) in `UserDashboard` and `GlobalAnalyticsView`.
+    - Corrected test runner and count claims in `README.md`.
+- **Secrets Audit**:
+  - Confirmed only `.env.example` is tracked in git. All environment secrets, `.env`, and `.env.local` are properly ignored; 0 secrets or API keys are committed in git history.
+- **Ponytail Audit**:
+  - *What this repo does*: Multi-tenant role-based project management web application built with Next.js App Router, MongoDB/Mongoose, Auth.js, and Google Gemini AI, featuring dedicated Kanban boards, real-time polling chat, secure GridFS file storage, and aggregation-driven analytics. Assumed load: concurrent team members collaborating across dozens of projects.
+  - *Verdict*: Healthy. Nothing to fix.
+  - *Lean*: -0 lines, -0 dependencies possible. All endpoints strictly authenticated, authorized, and input-validated with Zod.
+
+ALL_PHASE2_DONE
 
 
 
