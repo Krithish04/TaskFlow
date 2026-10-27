@@ -3,7 +3,7 @@ import { connectDB } from "@/lib/db";
 import { Task, type TaskStatus, type TaskPriority } from "@/models/Task";
 import { Project } from "@/models/Project";
 import "@/models/User";
-import { STATUS_CONFIG, PRIORITY_CONFIG } from "@/lib/design-tokens";
+import { STATUS_CONFIG, PRIORITY_CONFIG, STATUS_CHART_COLORS } from "@/lib/design-tokens";
 
 export type AnalyticsRange = "7" | "30" | "90";
 
@@ -182,12 +182,7 @@ const MONTH_NAMES = [
   "Dec",
 ];
 
-export const STATUS_CHART_COLORS: Record<TaskStatus, string> = {
-  todo: "#64748b",
-  in_progress: "#3b82f6",
-  review: "#f59e0b",
-  done: "#10b981",
-};
+export { STATUS_CHART_COLORS };
 
 export const PRIORITY_CHART_COLORS: Record<TaskPriority, string> = {
   low: "#94a3b8",

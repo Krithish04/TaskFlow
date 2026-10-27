@@ -156,6 +156,13 @@ export const STATUS_CONFIG: Record<TaskStatus, StatusConfig> = {
   },
 };
 
+export const STATUS_CHART_COLORS: Record<TaskStatus, string> = {
+  todo: "#64748b",
+  in_progress: "#3b82f6",
+  review: "#f59e0b",
+  done: "#10b981",
+};
+
 export interface PriorityConfig {
   key: TaskPriority;
   label: string;
