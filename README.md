@@ -8,11 +8,13 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-Mongoose%209-green?logo=mongodb)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8?logo=tailwindcss)
 ![Google Gemini](https://img.shields.io/badge/Google%20Gemini-AI%20SDK-orange?logo=google)
+![Docker](https://img.shields.io/badge/Docker-Multi--Stage-blue?logo=docker)
+![CI/CD](https://img.shields.io/badge/CI-GitHub%20Actions-2088FF?logo=githubactions)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 
 **Modern, role-based project management platform featuring interactive Kanban boards, project collaboration chat, secure GridFS file storage, aggregation-driven analytics, and Google Gemini AI assistance.**
 
-[Key Features](#features) • [Tech Stack](#tech-stack) • [Project Structure](#project-structure) • [Getting Started](#local-setup--installation) • [API Reference](#api-reference) • [Deployment](#deployment-notes)
+[Key Features](#features) • [Tech Stack](#tech-stack) • [Project Structure](#project-structure) • [Getting Started](#local-setup--installation) • [API Reference](#api-reference) • [DevOps & Docker](#devops--container-infrastructure) • [Deployment](#deployment-notes)
 
 </div>
 
@@ -159,7 +161,7 @@ Configure the following variables:
 | `MONGODB_URI` | MongoDB connection string (local or Atlas) | `mongodb+srv://<user>:<password>@cluster.mongodb.net/taskflow?retryWrites=true&w=majority` |
 | `AUTH_SECRET` | Secret key used by Auth.js to sign session JWTs | Generate with `openssl rand -base64 32` |
 | `GOOGLE_GENERATIVE_AI_API_KEY` | Google AI Studio API key | `AIzaSy...` |
-| `AI_MODEL` | Gemini model identifier (free tier compatible) | `gemini-2.0-flash` or `gemini-1.5-flash` |
+| `AI_MODEL` | Gemini model identifier (free tier compatible) | `gemini-3.8-flash` |
 
 ---
 
@@ -292,6 +294,76 @@ npm run migrate:v2
 - `POST /api/ai/weekly-report`: Generate executive status report.
 - `POST /api/ai/assistant`: Real-time streaming assistant answering project-scoped queries.
 
+### System & Observability
+- `GET /api/health`: Container readiness/liveness probe reporting MongoDB ping latency, process uptime, and memory utilization.
+
+---
+
+## DevOps & Container Infrastructure
+
+TaskFlow includes a production-ready DevOps foundation designed for containerized cloud deployment and automated CI/CD.
+
+### 1. Multi-Stage Dockerfile
+The production [Dockerfile](Dockerfile) uses an optimized 3-stage build process:
+- **`deps`**: Installs production & development dependencies leveraging Docker layer caching (`package.json` + `package-lock.json`).
+- **`builder`**: Compiles TypeScript and runs Next.js `output: "standalone"` generation.
+- **`runner`**: Minimal Alpine Linux runtime with non-root user `nextjs:nodejs` (UID 1001) for CIS Docker security compliance, shrinking the final image from >1.2 GB to ~120 MB.
+
+### 2. Local Multi-Container Orchestration (Docker Compose)
+Run the complete stack (Next.js web app + MongoDB 7.0 database) locally with a single command:
+```bash
+docker compose up --build
+```
+- **Internal Service Discovery**: Next.js automatically connects to `mongodb://mongo:27017/taskflow` using Docker DNS.
+- **Data Persistence**: MongoDB data is stored in the named volume `mongo_data`.
+- **Healthcheck Synchronization**: The web container waits for MongoDB to pass internal healthchecks (`mongosh --eval "db.adminCommand('ping')"`) before starting up.
+
+### 3. Observability & Health Probing
+The `/api/health` endpoint serves as a cloud orchestrator probe (Kubernetes, AWS ECS, Docker):
+```bash
+curl http://localhost:3000/api/health
+```
+Example response:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-11-26T03:09:20.677Z",
+  "uptimeSeconds": 2400,
+  "responseTimeMs": 42,
+  "database": {
+    "status": "connected",
+    "latencyMs": 12
+  },
+  "system": {
+    "nodeVersion": "v22.20.0",
+    "memory": {
+      "rss": "142MB",
+      "heapUsed": "86MB",
+      "heapTotal": "112MB"
+    }
+  }
+}
+```
+
+### 4. Automated CI Quality Gate (GitHub Actions)
+The repository includes a GitHub Actions pipeline in [.github/workflows/ci.yml](.github/workflows/ci.yml) that triggers on every pull request and push to `main`:
+1. **Job 1 (Code Quality)**: Executes `npm ci`, static analysis (`npm run lint`), TypeScript checks (`npm run typecheck`), and dependency vulnerability audit (`npm audit --audit-level=high`).
+2. **Job 2 (Production Build)**: Builds the Next.js standalone application in an isolated runner.
+3. **Job 3 (Docker Validation)**: Performs a dry-run Docker image build using Buildx and GitHub Actions cache (`type=gha`) to ensure no container regressions occur.
+4. **Concurrency Management**: Automatically cancels superseded runs on active PRs to minimize runner queue times.
+
+### 5. Security & SEO Architecture
+- **HTTP Security Headers**: Configured in `next.config.ts`:
+  - `X-Frame-Options: DENY` (anti-clickjacking)
+  - `X-Content-Type-Options: nosniff` (anti-MIME sniffing)
+  - `Strict-Transport-Security (HSTS)` (`max-age=63072000`)
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=()`
+  - `poweredByHeader: false` (suppresses `X-Powered-By: Next.js`)
+- **Search Engine Optimization (SEO)**:
+  - Dynamic `robots.txt` (`src/app/robots.ts`) allowing public indexing (`/`, `/login`) while strictly disallowing private tenant workspaces (`/api/`, `/dashboard`, `/projects`).
+  - Automated XML sitemap (`src/app/sitemap.ts`) at `/sitemap.xml`.
+  - Comprehensive OpenGraph and Twitter card metadata for social link unfurling.
+
 ---
 
 ## Deployment Notes
@@ -308,7 +380,7 @@ npm run migrate:v2
    - `MONGODB_URI`: Your MongoDB Atlas connection URI.
    - `AUTH_SECRET`: Generated 32-character string (`openssl rand -base64 32`).
    - `GOOGLE_GENERATIVE_AI_API_KEY`: Your Google AI Studio API key.
-   - `AI_MODEL`: Set to `gemini-2.0-flash` or `gemini-1.5-flash`.
+   - `AI_MODEL`: Set to `gemini-3.8-flash`.
 3. Keep default build settings (`next build`) and deploy.
 
 ---
