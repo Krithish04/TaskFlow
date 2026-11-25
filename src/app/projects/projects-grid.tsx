@@ -195,10 +195,7 @@ export function ProjectsGrid({
                 key={project.id}
                 className="overflow-hidden border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all duration-200 flex flex-col group relative"
               >
-                {/* Color Accent Bar on Top */}
-                <div className={`h-1.5 w-full ${colorConfig.dotClass}`} />
-
-                <CardContent className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                <CardContent className="p-5 pt-5 sm:pt-5 flex-1 flex flex-col justify-between space-y-4">
                   {/* Header: Key Badge, Name, Status */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2">

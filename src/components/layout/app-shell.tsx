@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   CheckSquare,
@@ -11,7 +11,6 @@ import {
   LogOut,
   Menu,
   X,
-  Search,
   ChevronRight,
   ChevronsUpDown,
   BarChart3,
@@ -57,9 +56,37 @@ export function AppShell({
   actions,
   children,
 }: AppShellProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [switcherOpen, setSwitcherOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const searchContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Close search dropdown on click outside
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredProjects = React.useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return projects.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        (p.key && p.key.toLowerCase().includes(q))
+    );
+  }, [searchQuery, projects]);
 
   // Close mobile sidebar on route change during render
   const [prevPathname, setPrevPathname] = React.useState(pathname);
@@ -398,13 +425,79 @@ export function AppShell({
 
           {/* Right Top Bar: Search Placeholder, Actions, ThemeToggle, User Menu */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            {/* Search Placeholder per DESIGN.md */}
-            <div className="hidden md:flex items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground cursor-pointer hover:bg-muted/70 transition-colors">
-              <Search className="size-3.5" />
-              <span>Search...</span>
-              <kbd className="pointer-events-none rounded bg-background px-1.5 py-0.5 text-[10px] font-mono font-medium text-muted-foreground border border-border">
-                ⌘K
-              </kbd>
+            {/* Functional Search Input (without icon or shortcut key badge) */}
+            <div ref={searchContainerRef} className="relative hidden md:block">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (filteredProjects.length > 0) {
+                      router.push(`/projects/${filteredProjects[0].id}/overview`);
+                    } else if (searchQuery.trim()) {
+                      router.push(`/projects`);
+                    }
+                    setSearchOpen(false);
+                    setSearchQuery("");
+                  } else if (e.key === "Escape") {
+                    setSearchOpen(false);
+                  }
+                }}
+                aria-label="Search"
+                className="h-8 w-36 rounded-md border border-border bg-muted/40 px-3 text-xs text-foreground placeholder:text-muted-foreground transition-all duration-150 focus:w-56 focus:bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+
+              {searchOpen && searchQuery.trim() && (
+                <div className="absolute right-0 top-full z-50 mt-1.5 w-64 rounded-md border border-border bg-popover p-1.5 shadow-lg animate-in fade-in-50 zoom-in-95">
+                  <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Projects ({filteredProjects.length})
+                  </div>
+                  {filteredProjects.length > 0 ? (
+                    <div className="space-y-0.5 max-h-56 overflow-y-auto">
+                      {filteredProjects.map((p) => {
+                        const color = getProjectColor(p.color);
+                        return (
+                          <Link
+                            key={p.id}
+                            href={`/projects/${p.id}/overview`}
+                            onClick={() => {
+                              setSearchOpen(false);
+                              setSearchQuery("");
+                            }}
+                            className="flex items-center justify-between rounded px-2 py-1.5 text-xs text-foreground hover:bg-muted transition-colors"
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <span
+                                className="size-2 rounded-full shrink-0"
+                                style={{ backgroundColor: color.hex }}
+                              />
+                              <span className="font-medium truncate">{p.name}</span>
+                            </div>
+                            {p.key && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] uppercase font-mono px-1 py-0 h-4 shrink-0"
+                              >
+                                {p.key}
+                              </Badge>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="px-2 py-2 text-xs text-muted-foreground text-center">
+                      No matching projects found
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {actions}

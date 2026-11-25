@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { User } from "@/models/User";
+import { parseBoundedJson } from "@/lib/api-utils";
 import {
   requireRole,
   handleAuthError,
@@ -66,14 +67,9 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  const { data: body, error: jsonError, status: jsonStatus } = await parseBoundedJson(request);
+  if (jsonError) {
+    return NextResponse.json({ error: jsonError }, { status: jsonStatus || 400 });
   }
 
   const parsed = patchUserSchema.safeParse(body);
@@ -117,7 +113,7 @@ export async function PATCH(request: NextRequest) {
     const updatedUser = await User.findByIdAndUpdate(
       id,
       { role },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     )
       .select("-passwordHash")
       .lean();

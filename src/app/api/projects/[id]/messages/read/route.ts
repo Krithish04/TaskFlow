@@ -31,7 +31,7 @@ export async function POST(
       },
       {
         upsert: true,
-        new: true,
+        returnDocument: "after",
       }
     );
 

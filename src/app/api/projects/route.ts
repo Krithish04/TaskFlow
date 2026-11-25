@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import { Project, generateProjectKey, PROJECT_COLORS } from "@/models/Project";
 import { canCreateProject } from "@/lib/permissions";
+import { parseBoundedJson } from "@/lib/api-utils";
 
 const createProjectSchema = z.object({
   name: z
@@ -76,14 +77,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  const { data: body, error: jsonError, status: jsonStatus } = await parseBoundedJson(request);
+  if (jsonError) {
+    return NextResponse.json({ error: jsonError }, { status: jsonStatus || 400 });
   }
 
   const parsed = createProjectSchema.safeParse(body);

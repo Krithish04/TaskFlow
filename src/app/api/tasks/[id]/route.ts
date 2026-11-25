@@ -4,6 +4,8 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Task } from "@/models/Task";
 import { Comment } from "@/models/Comment";
+import { File as FileModel } from "@/models/File";
+import { parseBoundedJson } from "@/lib/api-utils";
 import {
   requireProjectAccess,
   handleAuthError,
@@ -41,7 +43,8 @@ export async function GET(
     await connectDB();
     const task = await Task.findById(id)
       .populate("assignee", "name email role")
-      .populate("createdBy", "name email role");
+      .populate("createdBy", "name email role")
+      .lean();
 
     if (!task) {
       return NextResponse.json(
@@ -75,14 +78,9 @@ export async function PATCH(
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  const { data: body, error: jsonError, status: jsonStatus } = await parseBoundedJson(request);
+  if (jsonError) {
+    return NextResponse.json({ error: jsonError }, { status: jsonStatus || 400 });
   }
 
   const parsed = updateTaskSchema.safeParse(body);
@@ -201,6 +199,10 @@ export async function DELETE(
     await requireProjectAccess(task.project, "edit");
 
     await Comment.deleteMany({ task: id });
+    await FileModel.updateMany(
+      { taskId: new Types.ObjectId(id) },
+      { $set: { taskId: null } }
+    );
     await Task.findByIdAndDelete(id);
 
     return NextResponse.json({

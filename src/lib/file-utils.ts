@@ -293,6 +293,29 @@ export function getContentDisposition(mime: string, filename: string): string {
 const uploadTimestamps = new Map<string, number[]>();
 const MAX_UPLOADS_PER_MINUTE = 20;
 const UPLOAD_WINDOW_MS = 60 * 1000;
+const CLEANUP_INTERVAL_MS = 60 * 1000;
+let lastCleanupTime = Date.now();
+
+/**
+ * Removes expired upload timestamps to prevent in-memory memory leaks.
+ */
+export function cleanupExpiredUploadEntries(
+  now: number = Date.now(),
+  maxWindowMs: number = UPLOAD_WINDOW_MS
+): number {
+  let cleanedCount = 0;
+  for (const [userId, timestamps] of uploadTimestamps.entries()) {
+    const validTimestamps = timestamps.filter((t) => t > now - maxWindowMs);
+    if (validTimestamps.length === 0) {
+      uploadTimestamps.delete(userId);
+      cleanedCount++;
+    } else if (validTimestamps.length !== timestamps.length) {
+      uploadTimestamps.set(userId, validTimestamps);
+    }
+  }
+  lastCleanupTime = now;
+  return cleanedCount;
+}
 
 /**
  * Checks whether a user has exceeded their upload rate limit.
@@ -304,6 +327,11 @@ export function checkUploadRateLimit(
 ): { allowed: boolean; retryAfterSeconds: number } {
   const now = Date.now();
   const windowStart = now - windowMs;
+
+  // Opportunistic sweep for expired entries
+  if (now - lastCleanupTime > CLEANUP_INTERVAL_MS || uploadTimestamps.size > 1000) {
+    cleanupExpiredUploadEntries(now, windowMs);
+  }
 
   const existing = uploadTimestamps.get(userId) || [];
   const valid = existing.filter((t) => t > windowStart);

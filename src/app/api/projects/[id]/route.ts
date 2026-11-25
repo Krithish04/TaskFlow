@@ -5,6 +5,11 @@ import { connectDB } from "@/lib/db";
 import { Project, PROJECT_COLORS } from "@/models/Project";
 import { Task } from "@/models/Task";
 import { Comment } from "@/models/Comment";
+import { Message } from "@/models/Message";
+import { File as FileModel } from "@/models/File";
+import { ProjectReadState } from "@/models/ProjectReadState";
+import { getGridFSBucket } from "@/lib/file-utils";
+import { parseBoundedJson } from "@/lib/api-utils";
 import {
   requireProjectAccess,
   handleAuthError,
@@ -69,14 +74,9 @@ export async function PATCH(
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  const { data: body, error: jsonError, status: jsonStatus } = await parseBoundedJson(request);
+  if (jsonError) {
+    return NextResponse.json({ error: jsonError }, { status: jsonStatus || 400 });
   }
 
   const parsed = updateProjectSchema.safeParse(body);
@@ -177,14 +177,41 @@ export async function DELETE(
     await connectDB();
 
     // Cascading delete of tasks and comments for this project
-    const tasks = await Task.find({ project: id }).select("_id").lean();
+    const projectObjectId = new Types.ObjectId(id);
+    const tasks = await Task.find({ project: projectObjectId }).select("_id").lean();
     if (tasks.length > 0) {
       const taskIds = tasks.map((t) => t._id);
       await Comment.deleteMany({ task: { $in: taskIds } });
-      await Task.deleteMany({ project: id });
+      await Task.deleteMany({ project: projectObjectId });
     }
 
-    await Project.findByIdAndDelete(id);
+    // Clean up GridFS binaries and File records
+    try {
+      const projectFiles = await FileModel.find({ project: projectObjectId })
+        .select("storageId")
+        .lean();
+      if (projectFiles.length > 0) {
+        const bucket = getGridFSBucket();
+        for (const file of projectFiles) {
+          if (file.storageId) {
+            try {
+              await bucket.delete(file.storageId);
+            } catch {
+              // Ignore if already deleted in GridFS
+            }
+          }
+        }
+        await FileModel.deleteMany({ project: projectObjectId });
+      }
+    } catch {
+      // Ignore if GridFS bucket is empty or not yet initialized
+    }
+
+    // Clean up chat messages and unread state tracking
+    await Message.deleteMany({ project: projectObjectId });
+    await ProjectReadState.deleteMany({ project: projectObjectId });
+
+    await Project.findByIdAndDelete(projectObjectId);
 
     return NextResponse.json({
       success: true,

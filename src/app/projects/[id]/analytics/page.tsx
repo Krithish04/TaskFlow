@@ -8,6 +8,8 @@ interface AnalyticsPageProps {
   params: Promise<{ id: string }>;
 }
 
+export const instant = false;
+
 export default async function AnalyticsPage({ params }: AnalyticsPageProps) {
   const { id } = await params;
 

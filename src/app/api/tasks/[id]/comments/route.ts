@@ -31,7 +31,7 @@ export async function GET(
 
   try {
     await connectDB();
-    const task = await Task.findById(id);
+    const task = await Task.findById(id).select("project").lean();
     if (!task) {
       return NextResponse.json(
         { error: "Task not found" },
@@ -43,7 +43,8 @@ export async function GET(
 
     const comments = await Comment.find({ task: id })
       .sort({ createdAt: 1 })
-      .populate("author", "name email role");
+      .populate("author", "name email role")
+      .lean();
 
     return NextResponse.json({ comments });
   } catch (error) {

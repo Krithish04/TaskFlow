@@ -493,7 +493,7 @@ export function UserDashboard({
                     key={task.id}
                     className="shadow-2xs hover:border-primary/40 transition-colors"
                   >
-                    <CardContent className="p-4 space-y-2.5">
+                    <CardContent className="p-4 pt-4 sm:pt-4 space-y-2.5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1 flex-1">
                           <div className="flex flex-wrap items-center gap-2">

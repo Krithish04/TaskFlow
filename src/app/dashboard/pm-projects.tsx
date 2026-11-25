@@ -26,7 +26,6 @@ import {
 import { WeeklyReportDialog } from "./weekly-report-dialog";
 
 import { ProjectDialog, type ProjectFormData } from "@/components/projects/project-dialog";
-import { getProjectColor } from "@/lib/design-tokens";
 
 interface DashboardProjectMember {
   id: string;
@@ -383,17 +382,12 @@ export function PMProjects({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProjects.map((project) => {
             const isOwner = project.owner.id === currentUserId;
-            const palette = getProjectColor(project.color);
 
             return (
               <Card
                 key={project.id}
                 className="flex flex-col justify-between shadow-xs hover:border-primary/40 transition-colors overflow-hidden relative"
               >
-                <div
-                  className="h-1.5 w-full shrink-0"
-                  style={{ backgroundColor: palette.hex }}
-                />
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">

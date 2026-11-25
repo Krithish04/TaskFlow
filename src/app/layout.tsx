@@ -14,10 +14,54 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "TaskFlow - Project Management with AI",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "TaskFlow - Intelligent Project Management",
+    template: "%s | TaskFlow",
+  },
   description:
-    "TaskFlow is a role-based project management app with Kanban boards, task comments, and an AI assistant.",
+    "TaskFlow is a role-based collaborative project management platform featuring interactive Kanban boards, team chat, GridFS file sharing, and Google Gemini AI.",
+  keywords: [
+    "project management",
+    "kanban board",
+    "task manager",
+    "gemini ai",
+    "team collaboration",
+    "workflow automation",
+    "mongodb",
+    "next.js",
+  ],
+  authors: [{ name: "TaskFlow Team" }],
+  creator: "TaskFlow",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: siteUrl,
+    title: "TaskFlow - Intelligent Project Management",
+    description:
+      "Role-based project management with Kanban boards, team chat, and AI-powered task breakdowns.",
+    siteName: "TaskFlow",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TaskFlow - Intelligent Project Management",
+    description:
+      "Role-based project management with Kanban boards, team chat, and AI-powered task breakdowns.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({

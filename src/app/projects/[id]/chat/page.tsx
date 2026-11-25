@@ -8,6 +8,8 @@ interface ChatPageProps {
   params: Promise<{ id: string }>;
 }
 
+export const instant = false;
+
 export default async function ChatPage({ params }: ChatPageProps) {
   const { id } = await params;
 

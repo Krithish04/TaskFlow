@@ -213,7 +213,7 @@ export async function POST(
     await ProjectReadState.findOneAndUpdate(
       { user: new Types.ObjectId(user.id), project: project._id },
       { $set: { lastReadAt: message.createdAt || new Date() } },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
 
     // Return populated message

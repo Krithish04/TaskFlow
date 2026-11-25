@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Task } from "@/models/Task";
+import { parseBoundedJson } from "@/lib/api-utils";
 import {
   requireProjectAccess,
   canMoveTask,
@@ -26,14 +27,9 @@ export async function POST(
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  const { data: body, error: jsonError, status: jsonStatus } = await parseBoundedJson(request);
+  if (jsonError) {
+    return NextResponse.json({ error: jsonError }, { status: jsonStatus || 400 });
   }
 
   const parsed = moveTaskSchema.safeParse(body);

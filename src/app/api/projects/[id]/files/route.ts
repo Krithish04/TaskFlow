@@ -44,15 +44,12 @@ export async function GET(
       .sort({ createdAt: -1 })
       .lean();
 
-    // Compute total active storage used for this project
-    const allProjectFiles = await FileModel.find(
-      { project: new Types.ObjectId(id), deletedAt: null },
-      "size"
-    ).lean();
-    const totalBytesUsed = allProjectFiles.reduce(
-      (acc, file) => acc + (file.size || 0),
-      0
-    );
+    // Compute total active storage used for this project via aggregation
+    const usageAgg = await FileModel.aggregate([
+      { $match: { project: new Types.ObjectId(id), deletedAt: null } },
+      { $group: { _id: null, totalBytes: { $sum: "$size" } } },
+    ]);
+    const totalBytesUsed = usageAgg[0]?.totalBytes || 0;
 
     return NextResponse.json({
       files,

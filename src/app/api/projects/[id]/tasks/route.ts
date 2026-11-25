@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 import { connectDB } from "@/lib/db";
 import { Task } from "@/models/Task";
 import { Project } from "@/models/Project";
+import { parseBoundedJson } from "@/lib/api-utils";
 import {
   requireProjectAccess,
   handleAuthError,
@@ -40,7 +41,7 @@ export async function GET(
     await requireProjectAccess(id, "view");
     await connectDB();
 
-    const tasks = await Task.find({ project: id })
+    const tasks = await Task.find({ project: new Types.ObjectId(id) })
       .populate("assignee", "name email role")
       .populate("createdBy", "name email role")
       .sort({ status: 1, order: 1 })
@@ -69,14 +70,9 @@ export async function POST(
     );
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+  const { data: body, error: jsonError, status: jsonStatus } = await parseBoundedJson(request);
+  if (jsonError) {
+    return NextResponse.json({ error: jsonError }, { status: jsonStatus || 400 });
   }
 
   const parsed = createTaskSchema.safeParse(body);
@@ -138,7 +134,7 @@ export async function POST(
     const updatedProject = await Project.findByIdAndUpdate(
       id,
       { $inc: { nextTaskNumber: 1 } },
-      { new: false, defaults: false }
+      { returnDocument: "before", defaults: false }
     );
 
     let taskNumber = updatedProject?.nextTaskNumber;

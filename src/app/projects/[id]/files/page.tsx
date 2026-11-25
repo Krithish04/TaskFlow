@@ -8,6 +8,8 @@ interface FilesPageProps {
   params: Promise<{ id: string }>;
 }
 
+export const instant = false;
+
 export default async function FilesPage({ params }: FilesPageProps) {
   const { id } = await params;
 

@@ -10,11 +10,22 @@ import {
 /**
  * Returns the configured LanguageModel instance from Vercel AI SDK.
  * The model identifier is resolved dynamically from the `AI_MODEL` environment variable,
- * falling back to "gemini-2.0-flash" if unset.
+ * falling back to "gemini-3.8-flash" if unset or outdated.
  */
 export function getAIModel(customModel?: string) {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  const modelName = customModel || process.env.AI_MODEL || "gemini-2.0-flash";
+  let modelName = customModel || process.env.AI_MODEL || "gemini-3.8-flash";
+
+  // Sanitize placeholder strings or deprecated model identifiers
+  if (
+    !modelName ||
+    modelName.startsWith("<") ||
+    modelName.trim() === "" ||
+    modelName === "gemini-2.0-flash" ||
+    modelName === "gemini-1.5-flash"
+  ) {
+    modelName = "gemini-3.8-flash";
+  }
 
   const google = createGoogleGenerativeAI({
     apiKey: apiKey || "",
